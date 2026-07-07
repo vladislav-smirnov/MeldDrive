@@ -1,3 +1,5 @@
+/build
+
 # Gradle files
 .gradle/
 build/
@@ -60,4 +62,3 @@ gen/
 /captures
 .externalNativeBuild
 .cxx
-/gradle/gradle-daemon-jvm.properties
