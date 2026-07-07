@@ -10,23 +10,43 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageEffect
+import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageIntent
+import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageState
 import io.github.airdaydreamers.melddrive.ui.viewmodel.AddStorageViewModel
+import kotlinx.coroutines.flow.collectLatest
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddStorageScreen(
     viewModel: AddStorageViewModel,
     onBack: () -> Unit,
     onSuccess: () -> Unit
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
-    LaunchedEffect(state.isSuccess) {
-        if (state.isSuccess) {
-            onSuccess()
+    LaunchedEffect(Unit) {
+        viewModel.effect.collectLatest { effect ->
+            when (effect) {
+                AddStorageEffect.NavigateBack -> onSuccess()
+            }
         }
     }
 
+    AddStorageContent(
+        state = state,
+        onIntent = viewModel::onIntent,
+        onBack = onBack
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddStorageContent(
+    state: AddStorageState,
+    onIntent: (AddStorageIntent) -> Unit,
+    onBack: () -> Unit
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -49,52 +69,55 @@ fun AddStorageScreen(
         ) {
             OutlinedTextField(
                 value = state.displayName,
-                onValueChange = viewModel::onDisplayNameChange,
+                onValueChange = { onIntent(AddStorageIntent.DisplayNameChange(it)) },
                 label = { Text("Display Name (e.g. Home NAS)") },
                 modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
                 value = state.host,
-                onValueChange = viewModel::onHostChange,
+                onValueChange = { onIntent(AddStorageIntent.HostChange(it)) },
                 label = { Text("Host Address (IP or hostname)") },
                 modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
                 value = state.port,
-                onValueChange = viewModel::onPortChange,
+                onValueChange = { onIntent(AddStorageIntent.PortChange(it)) },
                 label = { Text("Port (default 445)") },
                 modifier = Modifier.fillMaxWidth()
             )
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(checked = state.isAnonymous, onCheckedChange = viewModel::onAnonymousChange)
+                Checkbox(
+                    checked = state.isAnonymous,
+                    onCheckedChange = { onIntent(AddStorageIntent.AnonymousChange(it)) }
+                )
                 Text("Anonymous Access")
             }
 
             if (!state.isAnonymous) {
                 OutlinedTextField(
                     value = state.username,
-                    onValueChange = viewModel::onUsernameChange,
+                    onValueChange = { onIntent(AddStorageIntent.UsernameChange(it)) },
                     label = { Text("Username") },
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 OutlinedTextField(
                     value = state.password,
-                    onValueChange = viewModel::onPasswordChange,
+                    onValueChange = { onIntent(AddStorageIntent.PasswordChange(it)) },
                     label = { Text("Password") },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
 
             if (state.error != null) {
-                Text(state.error!!, color = MaterialTheme.colorScheme.error)
+                Text(state.error, color = MaterialTheme.colorScheme.error)
             }
 
             Button(
-                onClick = viewModel::saveServer,
+                onClick = { onIntent(AddStorageIntent.SaveServer) },
                 modifier = Modifier.align(Alignment.End),
                 enabled = !state.isLoading
             ) {

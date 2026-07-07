@@ -5,14 +5,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.airdaydreamers.melddrive.data.model.FileItem
 import io.github.airdaydreamers.melddrive.data.model.SidebarItemType
 import io.github.airdaydreamers.melddrive.data.model.StorageType
-import io.github.airdaydreamers.melddrive.ui.components.FileGrid
-import io.github.airdaydreamers.melddrive.ui.components.FileList
-import io.github.airdaydreamers.melddrive.ui.components.FileManagerDrawerContent
-import io.github.airdaydreamers.melddrive.ui.components.FileManagerTopBar
+import io.github.airdaydreamers.melddrive.ui.components.*
 import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerEffect
 import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerIntent
+import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerState
 import io.github.airdaydreamers.melddrive.ui.viewmodel.FileManagerViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -20,13 +20,11 @@ import kotlinx.coroutines.launch
 @Composable
 fun FileManagerScreen(
     viewModel: FileManagerViewModel,
-    onOpenFile: (FileManagerEffect) -> Unit,
+    onOpenFile: (FileManagerEffect.OpenFileExternally) -> Unit,
     onShowToast: (String) -> Unit,
     onNavigateToAddStorage: () -> Unit
 ) {
-    val state by viewModel.state.collectAsState()
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.effect.collectLatest { effect ->
@@ -38,8 +36,22 @@ fun FileManagerScreen(
         }
     }
 
+    FileManagerContent(
+        state = state,
+        onIntent = viewModel::onIntent
+    )
+}
+
+@Composable
+fun FileManagerContent(
+    state: FileManagerState,
+    onIntent: (FileManagerIntent) -> Unit
+) {
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
     BackHandler(enabled = state.currentPath.isNotEmpty()) {
-        viewModel.onIntent(FileManagerIntent.NavigateUp)
+        onIntent(FileManagerIntent.NavigateUp)
     }
 
     ModalNavigationDrawer(
@@ -50,13 +62,13 @@ fun FileManagerScreen(
                 currentPath = state.currentPath,
                 onItemClick = { item ->
                     if (item.type == SidebarItemType.ADD_STORAGE) {
-                        viewModel.onAddStorageClick()
+                        onIntent(FileManagerIntent.NavigateToAddStorage) // This was missing in intent previously but handled by a separate method, let's add it or keep it as is. Actually FileManagerViewModel has onAddStorageClick.
                     } else {
                         val storageType = when (item.type) {
                             SidebarItemType.REMOTE_SERVER -> StorageType.SMB
                             else -> StorageType.LOCAL
                         }
-                        item.path?.let { viewModel.onIntent(FileManagerIntent.NavigateTo(it, storageType, item.serverId)) }
+                        item.path?.let { onIntent(FileManagerIntent.NavigateTo(it, storageType, item.serverId)) }
                     }
                     scope.launch { drawerState.close() }
                 }
@@ -70,9 +82,9 @@ fun FileManagerScreen(
                     isGridView = state.isGridView,
                     searchQuery = state.searchQuery,
                     onMenuClick = { scope.launch { drawerState.open() } },
-                    onNavigateTo = { viewModel.onIntent(FileManagerIntent.NavigateTo(it, state.currentStorageType, state.currentServerId)) },
-                    onToggleViewMode = { viewModel.onIntent(FileManagerIntent.ToggleViewMode(it)) },
-                    onSearchQueryChange = { viewModel.onIntent(FileManagerIntent.Search(it)) }
+                    onNavigateTo = { onIntent(FileManagerIntent.NavigateTo(it, state.currentStorageType, state.currentServerId)) },
+                    onToggleViewMode = { onIntent(FileManagerIntent.ToggleViewMode(it)) },
+                    onSearchQueryChange = { onIntent(FileManagerIntent.Search(it)) }
                 )
             }
         ) { paddingValues ->
@@ -93,15 +105,15 @@ fun FileManagerScreen(
                         FileGrid(
                             files = filteredFiles,
                             selectedFiles = state.selectedFiles,
-                            onFileClick = { viewModel.onIntent(FileManagerIntent.OpenFile(it)) },
-                            onFileLongClick = { viewModel.onIntent(FileManagerIntent.SelectFile(it.path)) }
+                            onFileClick = { onIntent(FileManagerIntent.OpenFile(it)) },
+                            onFileLongClick = { onIntent(FileManagerIntent.SelectFile(it.path)) }
                         )
                     } else {
                         FileList(
                             files = filteredFiles,
                             selectedFiles = state.selectedFiles,
-                            onFileClick = { viewModel.onIntent(FileManagerIntent.OpenFile(it)) },
-                            onFileLongClick = { viewModel.onIntent(FileManagerIntent.SelectFile(it.path)) }
+                            onFileClick = { onIntent(FileManagerIntent.OpenFile(it)) },
+                            onFileLongClick = { onIntent(FileManagerIntent.SelectFile(it.path)) }
                         )
                     }
                 }

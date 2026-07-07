@@ -28,6 +28,7 @@ sealed interface FileManagerIntent {
     data class RenameFile(val path: String, val newName: String) : FileManagerIntent
     data class CreateFolder(val name: String) : FileManagerIntent
     data object Refresh : FileManagerIntent
+    data object NavigateToAddStorage : FileManagerIntent
 }
 
 sealed interface FileManagerEffect {

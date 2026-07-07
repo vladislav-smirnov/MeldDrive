@@ -112,12 +112,11 @@ class FileManagerViewModel(
             is FileManagerIntent.RenameFile -> renameFile(intent.path, intent.newName)
             is FileManagerIntent.CreateFolder -> createFolder(intent.name)
             FileManagerIntent.Refresh -> loadFiles(_state.value.currentPath, _state.value.currentStorageType, _state.value.currentServerId)
-        }
-    }
-
-    fun onAddStorageClick() {
-        viewModelScope.launch {
-            _effect.send(FileManagerEffect.NavigateToAddStorage)
+            FileManagerIntent.NavigateToAddStorage -> {
+                viewModelScope.launch {
+                    _effect.send(FileManagerEffect.NavigateToAddStorage)
+                }
+            }
         }
     }
 
