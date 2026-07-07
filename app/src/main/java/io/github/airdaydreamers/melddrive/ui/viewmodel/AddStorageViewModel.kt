@@ -48,10 +48,10 @@ class AddStorageViewModel(private val repository: FileRepository) : ViewModel() 
                     host = s.host,
                     port = s.port.toIntOrNull() ?: 445,
                     username = if (s.isAnonymous) null else s.username,
-                    password = if (s.isAnonymous) null else s.password,
+                    password = null, // Don't save password in DB
                     isAnonymous = s.isAnonymous
                 )
-                repository.addRemoteServer(server)
+                repository.addRemoteServer(server, if (s.isAnonymous) null else s.password)
                 _state.update { it.copy(isLoading = false, isSuccess = true) }
                 _effect.send(AddStorageEffect.NavigateBack)
             } catch (e: Exception) {

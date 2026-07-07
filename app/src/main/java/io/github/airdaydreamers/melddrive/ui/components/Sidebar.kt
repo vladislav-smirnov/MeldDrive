@@ -1,6 +1,8 @@
 package io.github.airdaydreamers.melddrive.ui.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -46,7 +48,8 @@ fun FileManagerSidebar(
 fun FileManagerDrawerContent(
     items: List<SidebarItem>,
     currentPath: String,
-    onItemClick: (SidebarItem) -> Unit
+    onItemClick: (SidebarItem) -> Unit,
+    onDeleteServer: (Long) -> Unit = {}
 ) {
     ModalDrawerSheet {
         Spacer(Modifier.height(12.dp))
@@ -73,7 +76,12 @@ fun FileManagerDrawerContent(
                 color = MaterialTheme.colorScheme.primary
             )
             remoteItems.forEach { item ->
-                SidebarDrawerItem(item, currentPath, onItemClick)
+                SidebarDrawerItem(
+                    item = item,
+                    currentPath = currentPath,
+                    onItemClick = onItemClick,
+                    onLongClick = { item.serverId?.let { onDeleteServer(it) } }
+                )
             }
         }
 
@@ -90,11 +98,34 @@ fun FileManagerDrawerContent(
 fun SidebarDrawerItem(
     item: SidebarItem,
     currentPath: String,
-    onItemClick: (SidebarItem) -> Unit
+    onItemClick: (SidebarItem) -> Unit,
+    onLongClick: (() -> Unit)? = null
 ) {
+    val isSelected = item.path == currentPath && item.type != SidebarItemType.ADD_STORAGE
+
     NavigationDrawerItem(
-        label = { Text(item.title) },
-        selected = item.path == currentPath && item.type != SidebarItemType.ADD_STORAGE,
+        label = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(item.title)
+                if (item.type == SidebarItemType.REMOTE_SERVER && onLongClick != null) {
+                    IconButton(
+                        onClick = { onLongClick() },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Delete Server",
+                            modifier = Modifier.size(16.dp),
+                            tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        },
+        selected = isSelected,
         onClick = { onItemClick(item) },
         icon = { Icon(item.icon, contentDescription = null) },
         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)

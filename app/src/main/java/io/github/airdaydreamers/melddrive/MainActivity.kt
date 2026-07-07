@@ -14,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -22,16 +23,17 @@ import io.github.airdaydreamers.melddrive.data.db.AppDatabase
 import io.github.airdaydreamers.melddrive.data.model.FileItem
 import io.github.airdaydreamers.melddrive.data.model.StorageType
 import io.github.airdaydreamers.melddrive.data.repository.FileRepository
+import io.github.airdaydreamers.melddrive.data.security.CredentialStorage
+import io.github.airdaydreamers.melddrive.data.security.SecurityManager
 import io.github.airdaydreamers.melddrive.data.storage.FileStreamProvider
-import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerEffect
 import io.github.airdaydreamers.melddrive.ui.screens.AddStorageScreen
 import io.github.airdaydreamers.melddrive.ui.screens.FileManagerScreen
+import io.github.airdaydreamers.melddrive.ui.screens.SettingsScreen
 import io.github.airdaydreamers.melddrive.ui.theme.MeldDriveTheme
-import io.github.airdaydreamers.melddrive.ui.viewmodel.ViewModelFactory
-import java.io.File
-import androidx.core.net.toUri
 import io.github.airdaydreamers.melddrive.ui.viewmodel.AddStorageViewModel
 import io.github.airdaydreamers.melddrive.ui.viewmodel.FileManagerViewModel
+import io.github.airdaydreamers.melddrive.ui.viewmodel.ViewModelFactory
+import java.io.File
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,7 +43,9 @@ class MainActivity : ComponentActivity() {
         checkPermissions()
 
         val database = AppDatabase.getDatabase(this)
-        val repository = FileRepository(database.remoteServerDao())
+        val securityManager = SecurityManager(this)
+        val credentialStorage = CredentialStorage(this, securityManager)
+        val repository = FileRepository(database.remoteServerDao(), credentialStorage)
         val viewModelFactory = ViewModelFactory(repository)
 
         setContent {
@@ -61,7 +65,8 @@ class MainActivity : ComponentActivity() {
                                     openFile(effect.fileItem, effect.serverId)
                                 },
                                 onShowToast = { Toast.makeText(this@MainActivity, it, Toast.LENGTH_SHORT).show() },
-                                onNavigateToAddStorage = { navController.navigate("add_storage") }
+                                onNavigateToAddStorage = { navController.navigate("add_storage") },
+                                onNavigateToSettings = { navController.navigate("settings") }
                             )
                         }
                         composable("add_storage") {
@@ -71,6 +76,9 @@ class MainActivity : ComponentActivity() {
                                 onBack = { navController.popBackStack() },
                                 onSuccess = { navController.popBackStack() }
                             )
+                        }
+                        composable("settings") {
+                            SettingsScreen(onBack = { navController.popBackStack() })
                         }
                     }
                 }

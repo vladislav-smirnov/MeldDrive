@@ -9,4 +9,5 @@ interface StorageSource {
     suspend fun createFolder(parentPath: String, name: String): Boolean
     suspend fun getFileSize(path: String): Long
     suspend fun readFile(path: String, offset: Long, length: Int): ByteArray
+    suspend fun searchFiles(path: String, query: String): List<FileItem>
 }

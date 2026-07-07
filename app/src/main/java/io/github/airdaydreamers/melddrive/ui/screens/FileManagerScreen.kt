@@ -6,7 +6,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.github.airdaydreamers.melddrive.data.model.FileItem
 import io.github.airdaydreamers.melddrive.data.model.SidebarItemType
 import io.github.airdaydreamers.melddrive.data.model.StorageType
 import io.github.airdaydreamers.melddrive.ui.components.*
@@ -22,7 +21,8 @@ fun FileManagerScreen(
     viewModel: FileManagerViewModel,
     onOpenFile: (FileManagerEffect.OpenFileExternally) -> Unit,
     onShowToast: (String) -> Unit,
-    onNavigateToAddStorage: () -> Unit
+    onNavigateToAddStorage: () -> Unit,
+    onNavigateToSettings: () -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -32,26 +32,60 @@ fun FileManagerScreen(
                 is FileManagerEffect.OpenFileExternally -> onOpenFile(effect)
                 is FileManagerEffect.ShowToast -> onShowToast(effect.message)
                 FileManagerEffect.NavigateToAddStorage -> onNavigateToAddStorage()
+                FileManagerEffect.NavigateToSettings -> onNavigateToSettings()
             }
         }
     }
 
+    var serverToDelete by remember { mutableStateOf<Long?>(null) }
+
+    if (serverToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { serverToDelete = null },
+            title = { Text("Remove Server") },
+            text = { Text("Are you sure you want to remove this server?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    serverToDelete?.let { viewModel.onIntent(FileManagerIntent.DeleteRemoteServer(it)) }
+                    serverToDelete = null
+                }) {
+                    Text("Remove")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { serverToDelete = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     FileManagerContent(
         state = state,
-        onIntent = viewModel::onIntent
+        onIntent = viewModel::onIntent,
+        onDeleteServer = { serverToDelete = it }
     )
 }
 
 @Composable
 fun FileManagerContent(
     state: FileManagerState,
-    onIntent: (FileManagerIntent) -> Unit
+    onIntent: (FileManagerIntent) -> Unit,
+    onDeleteServer: (Long) -> Unit = {}
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
-    BackHandler(enabled = state.currentPath.isNotEmpty()) {
-        onIntent(FileManagerIntent.NavigateUp)
+    val currentServerName = remember(state.currentServerId, state.sidebarItems) {
+        state.sidebarItems.find { (it.serverId == state.currentServerId) && (it.type == SidebarItemType.REMOTE_SERVER) }?.title
+    }
+
+    BackHandler(enabled = state.currentPath.isNotEmpty() || state.isSearchActive) {
+        if (state.isSearchActive) {
+            onIntent(FileManagerIntent.SetSearchActive(false))
+        } else {
+            onIntent(FileManagerIntent.NavigateUp)
+        }
     }
 
     ModalNavigationDrawer(
@@ -60,6 +94,7 @@ fun FileManagerContent(
             FileManagerDrawerContent(
                 items = state.sidebarItems,
                 currentPath = state.currentPath,
+                onDeleteServer = onDeleteServer,
                 onItemClick = { item ->
                     if (item.type == SidebarItemType.ADD_STORAGE) {
                         onIntent(FileManagerIntent.NavigateToAddStorage) // This was missing in intent previously but handled by a separate method, let's add it or keep it as is. Actually FileManagerViewModel has onAddStorageClick.
@@ -79,12 +114,17 @@ fun FileManagerContent(
             topBar = {
                 FileManagerTopBar(
                     currentPath = state.currentPath,
+                    storageType = state.currentStorageType,
+                    serverName = currentServerName,
                     isGridView = state.isGridView,
                     searchQuery = state.searchQuery,
+                    isSearchActive = state.isSearchActive,
                     onMenuClick = { scope.launch { drawerState.open() } },
                     onNavigateTo = { onIntent(FileManagerIntent.NavigateTo(it, state.currentStorageType, state.currentServerId)) },
                     onToggleViewMode = { onIntent(FileManagerIntent.ToggleViewMode(it)) },
-                    onSearchQueryChange = { onIntent(FileManagerIntent.Search(it)) }
+                    onSearchQueryChange = { onIntent(FileManagerIntent.Search(it)) },
+                    onSearchActiveChange = { onIntent(FileManagerIntent.SetSearchActive(it)) },
+                    onSettingsClick = { onIntent(FileManagerIntent.NavigateToSettings) }
                 )
             }
         ) { paddingValues ->

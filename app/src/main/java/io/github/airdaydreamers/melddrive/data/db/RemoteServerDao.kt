@@ -13,7 +13,7 @@ interface RemoteServerDao {
     fun getAllServers(): Flow<List<RemoteServer>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertServer(server: RemoteServer)
+    fun insertServer(server: RemoteServer): Long
 
     @Delete
     fun deleteServer(server: RemoteServer)

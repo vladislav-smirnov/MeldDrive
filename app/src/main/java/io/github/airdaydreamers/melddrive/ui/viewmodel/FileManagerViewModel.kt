@@ -22,6 +22,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -97,6 +98,25 @@ class FileManagerViewModel(
             }
             is FileManagerIntent.Search -> {
                 _state.update { it.copy(searchQuery = intent.query) }
+                if (intent.query.length >= 3) {
+                    searchFiles(_state.value.currentPath, intent.query, _state.value.currentStorageType, _state.value.currentServerId)
+                } else {
+                    // Fallback to current folder listing if query is too short
+                    loadFiles(_state.value.currentPath, _state.value.currentStorageType, _state.value.currentServerId)
+                }
+            }
+            is FileManagerIntent.SetSearchActive -> {
+                val wasActive = _state.value.isSearchActive
+                _state.update {
+                    it.copy(
+                        isSearchActive = intent.isActive,
+                        searchQuery = if (!intent.isActive) "" else it.searchQuery
+                    )
+                }
+                if (wasActive && !intent.isActive) {
+                    // Refresh current folder when search is closed
+                    loadFiles(_state.value.currentPath, _state.value.currentStorageType, _state.value.currentServerId)
+                }
             }
             is FileManagerIntent.SelectFile -> {
                 _state.update {
@@ -116,6 +136,46 @@ class FileManagerViewModel(
                 viewModelScope.launch {
                     _effect.send(FileManagerEffect.NavigateToAddStorage)
                 }
+            }
+            is FileManagerIntent.DeleteRemoteServer -> deleteRemoteServer(intent.serverId)
+            FileManagerIntent.NavigateToSettings -> {
+                viewModelScope.launch {
+                    _effect.send(FileManagerEffect.NavigateToSettings)
+                }
+            }
+        }
+    }
+
+    private var searchJob: kotlinx.coroutines.Job? = null
+
+    private fun searchFiles(path: String, query: String, storageType: StorageType, serverId: Long?) {
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            _state.update { it.copy(isLoading = true, files = emptyList()) }
+            try {
+                val files = repository.searchFiles(path, query, storageType, serverId)
+                _state.update { it.copy(files = files, isLoading = false) }
+            } catch (e: Exception) {
+                _state.update { it.copy(isLoading = false) }
+                _effect.send(FileManagerEffect.ShowToast("Search error: ${e.message}"))
+            }
+        }
+    }
+
+    private fun deleteRemoteServer(serverId: Long) {
+        viewModelScope.launch {
+            try {
+                val servers = repository.getRemoteServers().first()
+                val serverToDelete = servers.find { it.id == serverId }
+                if (serverToDelete != null) {
+                    repository.deleteRemoteServer(serverToDelete)
+                    if (_state.value.currentServerId == serverId) {
+                        onIntent(FileManagerIntent.NavigateTo(Environment.getExternalStorageDirectory().absolutePath, StorageType.LOCAL))
+                    }
+                    _effect.send(FileManagerEffect.ShowToast("Server removed"))
+                }
+            } catch (e: Exception) {
+                _effect.send(FileManagerEffect.ShowToast("Error removing server: ${e.message}"))
             }
         }
     }
