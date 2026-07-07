@@ -30,6 +30,8 @@ import io.github.airdaydreamers.melddrive.ui.theme.MeldDriveTheme
 import io.github.airdaydreamers.melddrive.ui.viewmodel.ViewModelFactory
 import java.io.File
 import androidx.core.net.toUri
+import io.github.airdaydreamers.melddrive.ui.viewmodel.AddStorageViewModel
+import io.github.airdaydreamers.melddrive.ui.viewmodel.FileManagerViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,7 +45,7 @@ class MainActivity : ComponentActivity() {
         val viewModelFactory = ViewModelFactory(repository)
 
         setContent {
-            MeldDriveTheme {
+            MeldDriveTheme() {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -52,20 +54,20 @@ class MainActivity : ComponentActivity() {
 
                     NavHost(navController = navController, startDestination = "file_manager") {
                         composable("file_manager") {
+                            val viewModel: FileManagerViewModel = viewModel(factory = viewModelFactory)
                             FileManagerScreen(
-                                viewModel = viewModel(factory = viewModelFactory),
+                                viewModel = viewModel,
                                 onOpenFile = { effect ->
-                                    if (effect is FileManagerEffect.OpenFileExternally) {
-                                        openFile(effect.fileItem, effect.serverId)
-                                    }
+                                    openFile(effect.fileItem, effect.serverId)
                                 },
                                 onShowToast = { Toast.makeText(this@MainActivity, it, Toast.LENGTH_SHORT).show() },
                                 onNavigateToAddStorage = { navController.navigate("add_storage") }
                             )
                         }
                         composable("add_storage") {
+                            val viewModel: AddStorageViewModel = viewModel(factory = viewModelFactory)
                             AddStorageScreen(
-                                viewModel = viewModel(factory = viewModelFactory),
+                                viewModel = viewModel,
                                 onBack = { navController.popBackStack() },
                                 onSuccess = { navController.popBackStack() }
                             )
