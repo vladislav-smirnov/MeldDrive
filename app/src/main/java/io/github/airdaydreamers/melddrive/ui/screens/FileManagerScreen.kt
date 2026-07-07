@@ -5,8 +5,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import io.github.airdaydreamers.melddrive.data.model.FileItem
-import io.github.airdaydreamers.melddrive.ui.components.*
+import io.github.airdaydreamers.melddrive.data.model.SidebarItemType
+import io.github.airdaydreamers.melddrive.data.model.StorageType
+import io.github.airdaydreamers.melddrive.ui.components.FileGrid
+import io.github.airdaydreamers.melddrive.ui.components.FileList
+import io.github.airdaydreamers.melddrive.ui.components.FileManagerDrawerContent
+import io.github.airdaydreamers.melddrive.ui.components.FileManagerTopBar
 import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerEffect
 import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerIntent
 import io.github.airdaydreamers.melddrive.ui.viewmodel.FileManagerViewModel
@@ -16,7 +20,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun FileManagerScreen(
     viewModel: FileManagerViewModel,
-    onOpenFile: (FileItem) -> Unit,
+    onOpenFile: (FileManagerEffect) -> Unit,
     onShowToast: (String) -> Unit,
     onNavigateToAddStorage: () -> Unit
 ) {
@@ -27,7 +31,7 @@ fun FileManagerScreen(
     LaunchedEffect(Unit) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
-                is FileManagerEffect.OpenFileExternally -> onOpenFile(effect.fileItem)
+                is FileManagerEffect.OpenFileExternally -> onOpenFile(effect)
                 is FileManagerEffect.ShowToast -> onShowToast(effect.message)
                 FileManagerEffect.NavigateToAddStorage -> onNavigateToAddStorage()
             }
@@ -45,12 +49,12 @@ fun FileManagerScreen(
                 items = state.sidebarItems,
                 currentPath = state.currentPath,
                 onItemClick = { item ->
-                    if (item.type == io.github.airdaydreamers.melddrive.data.model.SidebarItemType.ADD_STORAGE) {
+                    if (item.type == SidebarItemType.ADD_STORAGE) {
                         viewModel.onAddStorageClick()
                     } else {
                         val storageType = when (item.type) {
-                            io.github.airdaydreamers.melddrive.data.model.SidebarItemType.REMOTE_SERVER -> io.github.airdaydreamers.melddrive.data.model.StorageType.SMB
-                            else -> io.github.airdaydreamers.melddrive.data.model.StorageType.LOCAL
+                            SidebarItemType.REMOTE_SERVER -> StorageType.SMB
+                            else -> StorageType.LOCAL
                         }
                         item.path?.let { viewModel.onIntent(FileManagerIntent.NavigateTo(it, storageType, item.serverId)) }
                     }

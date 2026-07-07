@@ -14,7 +14,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.content.FileProvider
-import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -23,11 +22,14 @@ import io.github.airdaydreamers.melddrive.data.db.AppDatabase
 import io.github.airdaydreamers.melddrive.data.model.FileItem
 import io.github.airdaydreamers.melddrive.data.model.StorageType
 import io.github.airdaydreamers.melddrive.data.repository.FileRepository
+import io.github.airdaydreamers.melddrive.data.storage.FileStreamProvider
+import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerEffect
 import io.github.airdaydreamers.melddrive.ui.screens.AddStorageScreen
 import io.github.airdaydreamers.melddrive.ui.screens.FileManagerScreen
 import io.github.airdaydreamers.melddrive.ui.theme.MeldDriveTheme
 import io.github.airdaydreamers.melddrive.ui.viewmodel.ViewModelFactory
 import java.io.File
+import androidx.core.net.toUri
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,7 +54,11 @@ class MainActivity : ComponentActivity() {
                         composable("file_manager") {
                             FileManagerScreen(
                                 viewModel = viewModel(factory = viewModelFactory),
-                                onOpenFile = { openFile(it) },
+                                onOpenFile = { effect ->
+                                    if (effect is FileManagerEffect.OpenFileExternally) {
+                                        openFile(effect.fileItem, effect.serverId)
+                                    }
+                                },
                                 onShowToast = { Toast.makeText(this@MainActivity, it, Toast.LENGTH_SHORT).show() },
                                 onNavigateToAddStorage = { navController.navigate("add_storage") }
                             )
@@ -78,18 +84,19 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun openFile(fileItem: FileItem) {
-        if (fileItem.storageType != StorageType.LOCAL) {
-            Toast.makeText(this, "Remote file opening not implemented yet", Toast.LENGTH_SHORT).show()
-            return
+    private fun openFile(fileItem: FileItem, serverId: Long? = null) {
+        val uri = if (fileItem.storageType == StorageType.LOCAL) {
+            val file = File(fileItem.path)
+            FileProvider.getUriForFile(
+                this,
+                "${applicationId}.provider",
+                file
+            )
+        } else {
+            FileStreamProvider.buildUri(fileItem.storageType, serverId, fileItem.path)
         }
-        val file = File(fileItem.path)
-        val uri = FileProvider.getUriForFile(
-            this,
-            "${applicationId}.provider",
-            file
-        )
-        val mimeType = getMimeType(file)
+
+        val mimeType = getMimeType(fileItem.name)
 
         val intent = Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(uri, mimeType)
@@ -103,8 +110,8 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun getMimeType(file: File): String {
-        val extension = file.extension
+    private fun getMimeType(fileName: String): String? {
+        val extension = fileName.substringAfterLast(".", "")
         return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension) ?: "*/*"
     }
 

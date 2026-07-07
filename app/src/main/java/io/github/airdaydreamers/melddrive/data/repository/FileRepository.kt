@@ -57,4 +57,12 @@ class FileRepository(private val remoteServerDao: RemoteServerDao) {
     suspend fun createFolder(parentPath: String, name: String, storageType: StorageType, serverId: Long?) {
         getHandler(storageType, serverId).createFolder(parentPath, name)
     }
+
+    suspend fun getFileSize(path: String, storageType: StorageType, serverId: Long?): Long {
+        return getHandler(storageType, serverId).getFileSize(path)
+    }
+
+    suspend fun readFile(path: String, offset: Long, length: Int, storageType: StorageType, serverId: Long?): ByteArray {
+        return getHandler(storageType, serverId).readFile(path, offset, length)
+    }
 }
