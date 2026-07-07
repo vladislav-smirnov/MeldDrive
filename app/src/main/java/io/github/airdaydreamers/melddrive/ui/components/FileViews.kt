@@ -15,48 +15,23 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import io.github.airdaydreamers.melddrive.data.model.FileItem
-import java.nio.file.Path
-import java.text.SimpleDateFormat
-import java.util.*
 
 @Composable
 fun FileList(
     files: List<FileItem>,
-    selectedFiles: Set<Path>,
+    selectedFiles: Set<String>,
     onFileClick: (FileItem) -> Unit,
     onFileLongClick: (FileItem) -> Unit
 ) {
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
-        items(files, key = { it.path.toString() }) { file ->
-            FileListItem(
-                file = file,
-                isSelected = selectedFiles.contains(file.path),
-                onClick = { onFileClick(file) },
-                onLongClick = { onFileLongClick(file) }
-            )
-        }
-    }
-}
-
-@Composable
-fun FileGrid(
-    files: List<FileItem>,
-    selectedFiles: Set<Path>,
-    onFileClick: (FileItem) -> Unit,
-    onFileLongClick: (FileItem) -> Unit
-) {
-    LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 100.dp),
+    LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        contentPadding = PaddingValues(16.dp)
     ) {
-        items(files, key = { it.path.toString() }) { file ->
-            FileGridItem(
+        items(files) { file ->
+            FileListItem(
                 file = file,
                 isSelected = selectedFiles.contains(file.path),
                 onClick = { onFileClick(file) },
@@ -74,27 +49,56 @@ fun FileListItem(
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
-    ListItem(
-        headlineContent = { Text(file.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-        supportingContent = {
-            Text(
-                "${if (file.isDirectory) "--" else formatSize(file.size)} | ${formatDate(file.lastModified)}",
-                style = MaterialTheme.typography.bodySmall
+    Surface(
+        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
             )
-        },
-        leadingContent = {
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(vertical = 12.dp, horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Icon(
-                if (file.isDirectory) Icons.Default.Folder else Icons.Default.Description,
+                imageVector = if (file.isDirectory) Icons.Default.Folder else Icons.Default.Description,
                 contentDescription = null,
-                tint = if (file.isDirectory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                tint = if (file.isDirectory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
             )
-        },
-        modifier = Modifier.combinedClickable(
-            onClick = onClick,
-            onLongClick = onLongClick
-        ),
-        colors = if (isSelected) ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.primaryContainer) else ListItemDefaults.colors()
-    )
+            Spacer(Modifier.width(16.dp))
+            Text(
+                text = file.name,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+fun FileGrid(
+    files: List<FileItem>,
+    selectedFiles: Set<String>,
+    onFileClick: (FileItem) -> Unit,
+    onFileLongClick: (FileItem) -> Unit
+) {
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(120.dp),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp)
+    ) {
+        items(files) { file ->
+            FileGridItem(
+                file = file,
+                isSelected = selectedFiles.contains(file.path),
+                onClick = { onFileClick(file) },
+                onLongClick = { onFileLongClick(file) }
+            )
+        }
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -106,47 +110,35 @@ fun FileGridItem(
     onLongClick: () -> Unit
 ) {
     Card(
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+        ),
         modifier = Modifier
-            .fillMaxWidth()
+            .padding(4.dp)
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick
-            ),
-        colors = if (isSelected) CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer) else CardDefaults.cardColors()
+            )
     ) {
         Column(
             modifier = Modifier
-                .padding(8.dp)
+                .padding(16.dp)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
-                if (file.isDirectory) Icons.Default.Folder else Icons.Default.Description,
+                imageVector = if (file.isDirectory) Icons.Default.Folder else Icons.Default.Description,
                 contentDescription = null,
                 modifier = Modifier.size(48.dp),
-                tint = if (file.isDirectory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                tint = if (file.isDirectory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(Modifier.height(8.dp))
             Text(
                 text = file.name,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.bodyMedium,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
         }
     }
-}
-
-private fun formatSize(size: Long): String {
-    if (size <= 0) return "0 B"
-    val units = arrayOf("B", "KB", "MB", "GB", "TB")
-    val digitGroups = (Math.log10(size.toDouble()) / Math.log10(1024.0)).toInt()
-    return String.format("%.1f %s", size / Math.pow(1024.0, digitGroups.toDouble()), units[digitGroups])
-}
-
-private fun formatDate(timestamp: Long): String {
-    val date = Date(timestamp)
-    val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-    return sdf.format(date)
 }

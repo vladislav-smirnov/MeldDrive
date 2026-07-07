@@ -14,11 +14,20 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import io.github.airdaydreamers.melddrive.data.db.AppDatabase
 import io.github.airdaydreamers.melddrive.data.model.FileItem
+import io.github.airdaydreamers.melddrive.data.model.StorageType
+import io.github.airdaydreamers.melddrive.data.repository.FileRepository
+import io.github.airdaydreamers.melddrive.ui.screens.AddStorageScreen
 import io.github.airdaydreamers.melddrive.ui.screens.FileManagerScreen
 import io.github.airdaydreamers.melddrive.ui.theme.MeldDriveTheme
+import io.github.airdaydreamers.melddrive.ui.viewmodel.ViewModelFactory
 import java.io.File
-import androidx.core.net.toUri
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,16 +36,35 @@ class MainActivity : ComponentActivity() {
 
         checkPermissions()
 
+        val database = AppDatabase.getDatabase(this)
+        val repository = FileRepository(database.remoteServerDao())
+        val viewModelFactory = ViewModelFactory(repository)
+
         setContent {
             MeldDriveTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    FileManagerScreen(
-                        onOpenFile = { openFile(it) },
-                        onShowToast = { Toast.makeText(this, it, Toast.LENGTH_SHORT).show() }
-                    )
+                    val navController = rememberNavController()
+
+                    NavHost(navController = navController, startDestination = "file_manager") {
+                        composable("file_manager") {
+                            FileManagerScreen(
+                                viewModel = viewModel(factory = viewModelFactory),
+                                onOpenFile = { openFile(it) },
+                                onShowToast = { Toast.makeText(this@MainActivity, it, Toast.LENGTH_SHORT).show() },
+                                onNavigateToAddStorage = { navController.navigate("add_storage") }
+                            )
+                        }
+                        composable("add_storage") {
+                            AddStorageScreen(
+                                viewModel = viewModel(factory = viewModelFactory),
+                                onBack = { navController.popBackStack() },
+                                onSuccess = { navController.popBackStack() }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -51,7 +79,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun openFile(fileItem: FileItem) {
-        val file = fileItem.path.toFile()
+        if (fileItem.storageType != StorageType.LOCAL) {
+            Toast.makeText(this, "Remote file opening not implemented yet", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val file = File(fileItem.path)
         val uri = FileProvider.getUriForFile(
             this,
             "${applicationId}.provider",

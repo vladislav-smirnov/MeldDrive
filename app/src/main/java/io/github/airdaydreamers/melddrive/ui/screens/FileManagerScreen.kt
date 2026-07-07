@@ -4,38 +4,37 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.airdaydreamers.melddrive.data.model.FileItem
+import io.github.airdaydreamers.melddrive.ui.components.*
 import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerEffect
 import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerIntent
 import io.github.airdaydreamers.melddrive.ui.viewmodel.FileManagerViewModel
-import io.github.airdaydreamers.melddrive.ui.components.FileGrid
-import io.github.airdaydreamers.melddrive.ui.components.FileList
-import io.github.airdaydreamers.melddrive.ui.components.FileManagerDrawerContent
-import io.github.airdaydreamers.melddrive.ui.components.FileManagerTopBar
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @Composable
 fun FileManagerScreen(
-    viewModel: FileManagerViewModel = viewModel(),
+    viewModel: FileManagerViewModel,
     onOpenFile: (FileItem) -> Unit,
-    onShowToast: (String) -> Unit
+    onShowToast: (String) -> Unit,
+    onNavigateToAddStorage: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is FileManagerEffect.OpenFileExternally -> onOpenFile(effect.fileItem)
                 is FileManagerEffect.ShowToast -> onShowToast(effect.message)
+                FileManagerEffect.NavigateToAddStorage -> onNavigateToAddStorage()
             }
         }
     }
 
-    BackHandler(enabled = state.currentPath.parent != null) {
+    BackHandler(enabled = state.currentPath.isNotEmpty()) {
         viewModel.onIntent(FileManagerIntent.NavigateUp)
     }
 
@@ -46,7 +45,16 @@ fun FileManagerScreen(
                 items = state.sidebarItems,
                 currentPath = state.currentPath,
                 onItemClick = { item ->
-                    item.path?.let { viewModel.onIntent(FileManagerIntent.NavigateTo(it)) }
+                    if (item.type == io.github.airdaydreamers.melddrive.data.model.SidebarItemType.ADD_STORAGE) {
+                        viewModel.onAddStorageClick()
+                    } else {
+                        val storageType = when (item.type) {
+                            io.github.airdaydreamers.melddrive.data.model.SidebarItemType.REMOTE_SERVER -> io.github.airdaydreamers.melddrive.data.model.StorageType.SMB
+                            else -> io.github.airdaydreamers.melddrive.data.model.StorageType.LOCAL
+                        }
+                        item.path?.let { viewModel.onIntent(FileManagerIntent.NavigateTo(it, storageType, item.serverId)) }
+                    }
+                    scope.launch { drawerState.close() }
                 }
             )
         }
@@ -57,7 +65,8 @@ fun FileManagerScreen(
                     currentPath = state.currentPath,
                     isGridView = state.isGridView,
                     searchQuery = state.searchQuery,
-                    onNavigateTo = { viewModel.onIntent(FileManagerIntent.NavigateTo(it)) },
+                    onMenuClick = { scope.launch { drawerState.open() } },
+                    onNavigateTo = { viewModel.onIntent(FileManagerIntent.NavigateTo(it, state.currentStorageType, state.currentServerId)) },
                     onToggleViewMode = { viewModel.onIntent(FileManagerIntent.ToggleViewMode(it)) },
                     onSearchQueryChange = { viewModel.onIntent(FileManagerIntent.Search(it)) }
                 )
@@ -69,7 +78,7 @@ fun FileManagerScreen(
                     .padding(paddingValues)
             ) {
                 if (state.isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    CircularProgressIndicator(modifier = Modifier.align(androidx.compose.ui.Alignment.Center))
                 } else {
                     val filteredFiles = remember(state.files, state.searchQuery) {
                         if (state.searchQuery.isEmpty()) state.files

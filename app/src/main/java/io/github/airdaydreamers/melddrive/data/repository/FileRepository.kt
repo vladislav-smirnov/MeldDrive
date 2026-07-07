@@ -1,53 +1,60 @@
 package io.github.airdaydreamers.melddrive.data.repository
 
+import io.github.airdaydreamers.melddrive.data.db.RemoteServer
+import io.github.airdaydreamers.melddrive.data.db.RemoteServerDao
 import io.github.airdaydreamers.melddrive.data.model.FileItem
+import io.github.airdaydreamers.melddrive.data.model.StorageType
+import io.github.airdaydreamers.melddrive.data.storage.LocalFileSystemHandler
+import io.github.airdaydreamers.melddrive.data.storage.SmbFileSystemHandler
+import io.github.airdaydreamers.melddrive.data.storage.StorageSource
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.StandardCopyOption
-import kotlin.io.path.deleteIfExists
-import kotlin.io.path.exists
-import kotlin.io.path.isDirectory
-import kotlin.io.path.listDirectoryEntries
 
-class FileRepository {
+class FileRepository(private val remoteServerDao: RemoteServerDao) {
 
-    suspend fun listFiles(path: Path): List<FileItem> = withContext(Dispatchers.IO) {
-        if (path.isDirectory()) {
-            path.listDirectoryEntries().map { FileItem(it) }
-                .sortedWith(compareBy({ !it.isDirectory }, { it.name.lowercase() }))
-        } else {
-            emptyList()
-        }
+    private val localHandler = LocalFileSystemHandler()
+    private val smbHandlers = mutableMapOf<Long, SmbFileSystemHandler>()
+
+    fun getRemoteServers(): Flow<List<RemoteServer>> = remoteServerDao.getAllServers()
+
+    suspend fun addRemoteServer(server: RemoteServer) = withContext(Dispatchers.IO) {
+        remoteServerDao.insertServer(server)
     }
 
-    suspend fun deleteFiles(paths: Set<Path>) = withContext(Dispatchers.IO) {
-        paths.forEach { path ->
-            if (path.isDirectory()) {
-                path.toFile().deleteRecursively()
-            } else {
-                path.deleteIfExists()
+    suspend fun deleteRemoteServer(server: RemoteServer) = withContext(Dispatchers.IO) {
+        remoteServerDao.deleteServer(server)
+        smbHandlers.remove(server.id)
+    }
+
+    private suspend fun getHandler(storageType: StorageType, serverId: Long?): StorageSource = withContext(Dispatchers.IO) {
+        when (storageType) {
+            StorageType.LOCAL -> localHandler
+            StorageType.SMB -> {
+                serverId?.let { id ->
+                    smbHandlers.getOrPut(id) {
+                        val server = remoteServerDao.getServerById(id) ?: throw Exception("Server not found")
+                        SmbFileSystemHandler(server)
+                    }
+                } ?: throw Exception("Server ID required for SMB")
             }
+            else -> throw UnsupportedOperationException("Storage type $storageType not supported yet")
         }
     }
 
-    suspend fun renameFile(path: Path, newName: String) = withContext(Dispatchers.IO) {
-        val target = path.resolveSibling(newName)
-        Files.move(path, target, StandardCopyOption.REPLACE_EXISTING)
+    suspend fun listFiles(path: String, storageType: StorageType, serverId: Long? = null): List<FileItem> {
+        return getHandler(storageType, serverId).listFiles(path)
     }
 
-    suspend fun createFolder(parent: Path, name: String) = withContext(Dispatchers.IO) {
-        val newFolder = parent.resolve(name)
-        if (!newFolder.exists()) {
-            Files.createDirectory(newFolder)
-        }
+    suspend fun deleteFile(path: String, storageType: StorageType, serverId: Long?) {
+        getHandler(storageType, serverId).deleteFile(path)
     }
 
-    suspend fun moveFiles(paths: Set<Path>, targetDirectory: Path) = withContext(Dispatchers.IO) {
-        paths.forEach { path ->
-            val target = targetDirectory.resolve(path.fileName)
-            Files.move(path, target, StandardCopyOption.REPLACE_EXISTING)
-        }
+    suspend fun renameFile(path: String, newName: String, storageType: StorageType, serverId: Long?) {
+        getHandler(storageType, serverId).renameFile(path, newName)
+    }
+
+    suspend fun createFolder(parentPath: String, name: String, storageType: StorageType, serverId: Long?) {
+        getHandler(storageType, serverId).createFolder(parentPath, name)
     }
 }

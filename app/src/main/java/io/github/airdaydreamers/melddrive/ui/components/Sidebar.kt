@@ -4,15 +4,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import io.github.airdaydreamers.melddrive.data.model.SidebarItem
-import java.nio.file.Path
+import io.github.airdaydreamers.melddrive.data.model.SidebarItemType
 
 @Composable
 fun FileManagerSidebar(
     items: List<SidebarItem>,
-    currentPath: Path,
+    currentPath: String,
     onItemClick: (SidebarItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -32,7 +31,7 @@ fun FileManagerSidebar(
                     selected = isSelected,
                     onClick = { onItemClick(item) },
                     icon = {
-                        Icon(item.icon as ImageVector, contentDescription = item.title)
+                        Icon(item.icon, contentDescription = item.title)
                     },
                     label = {
                         Text(item.title, style = MaterialTheme.typography.labelSmall)
@@ -46,7 +45,7 @@ fun FileManagerSidebar(
 @Composable
 fun FileManagerDrawerContent(
     items: List<SidebarItem>,
-    currentPath: Path,
+    currentPath: String,
     onItemClick: (SidebarItem) -> Unit
 ) {
     ModalDrawerSheet {
@@ -56,14 +55,48 @@ fun FileManagerDrawerContent(
             modifier = Modifier.padding(16.dp),
             style = MaterialTheme.typography.titleLarge
         )
-        items.forEach { item ->
-            NavigationDrawerItem(
-                label = { Text(item.title) },
-                selected = item.path == currentPath,
-                onClick = { onItemClick(item) },
-                icon = { Icon(item.icon as ImageVector, contentDescription = null) },
-                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+
+        val localItems = items.filter { it.type == SidebarItemType.SYSTEM_FOLDER }
+        val remoteItems = items.filter { it.type == SidebarItemType.REMOTE_SERVER }
+        val actionItems = items.filter { it.type == SidebarItemType.ADD_STORAGE }
+
+        localItems.forEach { item ->
+            SidebarDrawerItem(item, currentPath, onItemClick)
+        }
+
+        if (remoteItems.isNotEmpty()) {
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            Text(
+                "Remote",
+                modifier = Modifier.padding(horizontal = 28.dp, vertical = 8.dp),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary
             )
+            remoteItems.forEach { item ->
+                SidebarDrawerItem(item, currentPath, onItemClick)
+            }
+        }
+
+        if (actionItems.isNotEmpty()) {
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            actionItems.forEach { item ->
+                SidebarDrawerItem(item, currentPath, onItemClick)
+            }
         }
     }
+}
+
+@Composable
+fun SidebarDrawerItem(
+    item: SidebarItem,
+    currentPath: String,
+    onItemClick: (SidebarItem) -> Unit
+) {
+    NavigationDrawerItem(
+        label = { Text(item.title) },
+        selected = item.path == currentPath && item.type != SidebarItemType.ADD_STORAGE,
+        onClick = { onItemClick(item) },
+        icon = { Icon(item.icon, contentDescription = null) },
+        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+    )
 }

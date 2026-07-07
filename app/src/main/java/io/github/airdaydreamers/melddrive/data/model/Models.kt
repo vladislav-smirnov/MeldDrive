@@ -1,26 +1,29 @@
 package io.github.airdaydreamers.melddrive.data.model
 
-import java.nio.file.Files
-import java.nio.file.Path
-import kotlin.io.path.isDirectory
-import kotlin.io.path.name
+import androidx.compose.ui.graphics.vector.ImageVector
 
 data class FileItem(
-    val path: Path,
-    val name: String = path.name,
-    val isDirectory: Boolean = path.isDirectory(),
-    val size: Long = if (isDirectory) 0 else try { Files.size(path) } catch (e: Exception) { 0 },
-    val lastModified: Long = try { Files.getLastModifiedTime(path).toMillis() } catch (e: Exception) { 0 }
+    val path: String,
+    val name: String,
+    val isDirectory: Boolean,
+    val size: Long = 0,
+    val lastModified: Long = 0,
+    val storageType: StorageType = StorageType.LOCAL
 )
 
+enum class StorageType {
+    LOCAL, SMB, DLNA, WEBDAV
+}
+
 enum class SidebarItemType {
-    SYSTEM_FOLDER, FAVORITE, TAG
+    SYSTEM_FOLDER, FAVORITE, TAG, REMOTE_SERVER, ADD_STORAGE
 }
 
 data class SidebarItem(
     val id: String,
     val title: String,
-    val path: Path?,
+    val path: String?,
     val type: SidebarItemType,
-    val icon: Any // TODO: use correct type
+    val icon: ImageVector,
+    val serverId: Long? = null
 )
