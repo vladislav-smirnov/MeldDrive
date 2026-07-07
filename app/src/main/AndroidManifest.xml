@@ -38,6 +38,12 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <provider
+            android:name=".data.storage.FileStreamProvider"
+            android:authorities="io.github.airdaydreamers.melddrive.filestream"
+            android:exported="false"
+            android:grantUriPermissions="true" />
     </application>
 
 </manifest>

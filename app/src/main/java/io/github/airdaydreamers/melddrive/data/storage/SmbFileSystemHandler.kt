@@ -126,4 +126,43 @@ class SmbFileSystemHandler(private val server: RemoteServer) : StorageSource {
             true
         }
     }
+
+
+    override suspend fun getFileSize(path: String): Long = useSession { session ->
+        val parts = path.split("/", limit = 2)
+        if (parts.size < 2) return@useSession 0L
+        val shareName = parts[0]
+        val relativePath = parts[1]
+
+        (session.connectShare(shareName) as DiskShare).use { share ->
+            share.getFileInformation(relativePath).standardInformation.endOfFile
+        }
+    }
+
+    override suspend fun readFile(path: String, offset: Long, length: Int): ByteArray = useSession { session ->
+        val parts = path.split("/", limit = 2)
+        if (parts.size < 2) return@useSession ByteArray(0)
+        val shareName = parts[0]
+        val relativePath = parts[1]
+
+        (session.connectShare(shareName) as DiskShare).use { share ->
+            share.openFile(
+                relativePath,
+                EnumSet.of(com.hierynomus.msdtyp.AccessMask.GENERIC_READ),
+                null,
+                SMB2ShareAccess.ALL,
+                SMB2CreateDisposition.FILE_OPEN,
+                null
+            ).use { file ->
+                val buffer = ByteArray(length)
+                val bytesRead = file.read(buffer, offset, 0, length)
+                if (bytesRead <= 0) return@useSession ByteArray(0)
+                if (bytesRead == length) {
+                    buffer
+                } else {
+                    buffer.copyOf(bytesRead)
+                }
+            }
+        }
+    }
 }

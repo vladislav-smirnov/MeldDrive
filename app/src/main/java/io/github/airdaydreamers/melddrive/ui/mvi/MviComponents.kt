@@ -32,6 +32,6 @@ sealed interface FileManagerIntent {
 
 sealed interface FileManagerEffect {
     data class ShowToast(val message: String) : FileManagerEffect
-    data class OpenFileExternally(val fileItem: FileItem) : FileManagerEffect
+    data class OpenFileExternally(val fileItem: FileItem, val serverId: Long? = null) : FileManagerEffect
     data object NavigateToAddStorage : FileManagerEffect
 }

@@ -88,7 +88,7 @@ class FileManagerViewModel(
                     onIntent(FileManagerIntent.NavigateTo(intent.fileItem.path, intent.fileItem.storageType, _state.value.currentServerId))
                 } else {
                     viewModelScope.launch {
-                        _effect.send(FileManagerEffect.OpenFileExternally(intent.fileItem))
+                        _effect.send(FileManagerEffect.OpenFileExternally(intent.fileItem, _state.value.currentServerId))
                     }
                 }
             }

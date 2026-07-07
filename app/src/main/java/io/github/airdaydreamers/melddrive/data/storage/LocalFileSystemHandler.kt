@@ -57,4 +57,22 @@ class LocalFileSystemHandler : StorageSource {
             false
         }
     }
+
+    override suspend fun getFileSize(path: String): Long = withContext(Dispatchers.IO) {
+        Files.size(Paths.get(path))
+    }
+
+    override suspend fun readFile(path: String, offset: Long, length: Int): ByteArray = withContext(Dispatchers.IO) {
+        Files.newByteChannel(Paths.get(path)).use { channel ->
+            channel.position(offset)
+            val buffer = java.nio.ByteBuffer.allocate(length)
+            val bytesRead = channel.read(buffer)
+            if (bytesRead <= 0) return@withContext ByteArray(0)
+            if (bytesRead == length) {
+                buffer.array()
+            } else {
+                buffer.array().copyOf(bytesRead)
+            }
+        }
+    }
 }
