@@ -127,7 +127,6 @@ class SmbFileSystemHandler(private val server: RemoteServer) : StorageSource {
         }
     }
 
-
     override suspend fun getFileSize(path: String): Long = useSession { session ->
         val parts = path.split("/", limit = 2)
         if (parts.size < 2) return@useSession 0L
@@ -162,6 +161,64 @@ class SmbFileSystemHandler(private val server: RemoteServer) : StorageSource {
                 } else {
                     buffer.copyOf(bytesRead)
                 }
+            }
+        }
+    }
+
+    override suspend fun searchFiles(path: String, query: String): List<FileItem> = useSession { session ->
+        val result = mutableListOf<FileItem>()
+        if (path.isEmpty()) {
+            // Cannot search across all shares easily without a lot of requests.
+            // For now, let's just list shares and search in their names.
+            val transport: RPCTransport = SMBTransportFactories.SRVSVC.getTransport(session)
+            val serverService = ServerService(transport)
+            val shares: List<NetShareInfo0> = serverService.shares0
+            shares.filter {
+                !it.netName.endsWith("$") && it.netName != "IPC$" && it.netName.contains(query, ignoreCase = true)
+            }.forEach { share ->
+                result.add(
+                    FileItem(
+                        path = share.netName,
+                        name = share.netName,
+                        isDirectory = true,
+                        storageType = StorageType.SMB
+                    )
+                )
+            }
+        } else {
+            val parts = path.split("/", limit = 2)
+            val shareName = parts[0]
+            val relativePath = if (parts.size > 1) parts[1] else ""
+
+            (session.connectShare(shareName) as DiskShare).use { share ->
+                recursiveSearch(share, shareName, relativePath, query, result)
+            }
+        }
+        result
+    }
+
+    private fun recursiveSearch(share: DiskShare, shareName: String, relativePath: String, query: String, result: MutableList<FileItem>) {
+        share.list(relativePath).forEach { info ->
+            if (info.fileName == "." || info.fileName == "..") return@forEach
+
+            val currentRelativePath = if (relativePath.isEmpty()) info.fileName else "$relativePath/${info.fileName}"
+            if (info.fileName.contains(query, ignoreCase = true)) {
+                val isDir = (info.fileAttributes and FileAttributes.FILE_ATTRIBUTE_DIRECTORY.value) != 0L
+                result.add(
+                    FileItem(
+                        path = "$shareName/$currentRelativePath",
+                        name = info.fileName,
+                        isDirectory = isDir,
+                        size = if (isDir) 0 else info.endOfFile,
+                        lastModified = info.changeTime.toEpochMillis(),
+                        storageType = StorageType.SMB
+                    )
+                )
+            }
+
+            val isDir = (info.fileAttributes and FileAttributes.FILE_ATTRIBUTE_DIRECTORY.value) != 0L
+            if (isDir) {
+                recursiveSearch(share, shareName, currentRelativePath, query, result)
             }
         }
     }

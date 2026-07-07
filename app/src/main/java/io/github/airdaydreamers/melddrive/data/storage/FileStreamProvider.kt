@@ -11,10 +11,11 @@ import android.os.ProxyFileDescriptorCallback
 import android.os.storage.StorageManager
 import android.system.ErrnoException
 import android.system.OsConstants
-import android.webkit.MimeTypeMap
 import io.github.airdaydreamers.melddrive.data.db.AppDatabase
 import io.github.airdaydreamers.melddrive.data.model.StorageType
 import io.github.airdaydreamers.melddrive.data.repository.FileRepository
+import io.github.airdaydreamers.melddrive.data.security.CredentialStorage
+import io.github.airdaydreamers.melddrive.data.security.SecurityManager
 import kotlinx.coroutines.runBlocking
 import java.io.FileNotFoundException
 
@@ -25,8 +26,11 @@ class FileStreamProvider : ContentProvider() {
     private lateinit var handler: Handler
 
     override fun onCreate(): Boolean {
-        val database = AppDatabase.getDatabase(context!!)
-        repository = FileRepository(database.remoteServerDao())
+        val context = context ?: return false
+        val database = AppDatabase.getDatabase(context)
+        val securityManager = SecurityManager(context)
+        val credentialStorage = CredentialStorage(context, securityManager)
+        repository = FileRepository(database.remoteServerDao(), credentialStorage)
         handlerThread = HandlerThread("FileStreamProviderThread")
         handlerThread.start()
         handler = Handler(handlerThread.looper)
@@ -43,7 +47,7 @@ class FileStreamProvider : ContentProvider() {
 
     override fun getType(uri: Uri): String? {
         val path = uri.path?.substringAfterLast(".", "")
-        return if (path.isNullOrEmpty()) "*/*" else MimeTypeMap.getSingleton().getMimeTypeFromExtension(path)
+        return if (path.isNullOrEmpty()) "*/*" else android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(path)
     }
 
     override fun insert(uri: Uri, values: ContentValues?): Uri? = null

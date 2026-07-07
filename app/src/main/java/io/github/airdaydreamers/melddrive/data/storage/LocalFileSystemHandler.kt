@@ -4,6 +4,7 @@ import io.github.airdaydreamers.melddrive.data.model.FileItem
 import io.github.airdaydreamers.melddrive.data.model.StorageType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.io.path.deleteIfExists
@@ -74,5 +75,25 @@ class LocalFileSystemHandler : StorageSource {
                 buffer.array().copyOf(bytesRead)
             }
         }
+    }
+
+    override suspend fun searchFiles(path: String, query: String): List<FileItem> = withContext(Dispatchers.IO) {
+        val root = File(path)
+        val result = mutableListOf<FileItem>()
+        root.walkTopDown().forEach { file ->
+            if (file.name.contains(query, ignoreCase = true)) {
+                result.add(
+                    FileItem(
+                        path = file.absolutePath,
+                        name = file.name,
+                        isDirectory = file.isDirectory,
+                        size = if (file.isDirectory) 0 else file.length(),
+                        lastModified = file.lastModified(),
+                        storageType = StorageType.LOCAL
+                    )
+                )
+            }
+        }
+        result
     }
 }
