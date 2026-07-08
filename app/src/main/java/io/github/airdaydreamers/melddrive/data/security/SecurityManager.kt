@@ -1,11 +1,11 @@
 package io.github.airdaydreamers.melddrive.data.security
 
 import android.content.Context
+import android.util.Base64
 import com.google.crypto.tink.Aead
 import com.google.crypto.tink.KeyTemplates
 import com.google.crypto.tink.aead.AeadConfig
 import com.google.crypto.tink.integration.android.AndroidKeysetManager
-import android.util.Base64
 
 class SecurityManager(context: Context) {
     private val aead: Aead

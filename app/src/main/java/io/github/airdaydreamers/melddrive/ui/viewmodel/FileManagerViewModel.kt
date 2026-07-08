@@ -30,14 +30,12 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
 
-class FileManagerViewModel(
-    private val repository: FileRepository
-) : ViewModel() {
+class FileManagerViewModel(private val repository: FileRepository) : ViewModel() {
 
     private val _state = MutableStateFlow(
         FileManagerState(
             currentPath = Environment.getExternalStorageDirectory().absolutePath,
-        )
+        ),
     )
     val state: StateFlow<FileManagerState> = _state.asStateFlow()
 
@@ -61,11 +59,12 @@ class FileManagerViewModel(
                         currentPath = intent.path,
                         currentStorageType = intent.storageType,
                         currentServerId = intent.serverId,
-                        selectedFiles = emptySet()
+                        selectedFiles = emptySet(),
                     )
                 }
                 loadFiles(intent.path, intent.storageType, intent.serverId)
             }
+
             FileManagerIntent.NavigateUp -> {
                 val currentPath = _state.value.currentPath
                 if (_state.value.currentStorageType == StorageType.LOCAL) {
@@ -84,6 +83,7 @@ class FileManagerViewModel(
                     }
                 }
             }
+
             is FileManagerIntent.OpenFile -> {
                 if (intent.fileItem.isDirectory) {
                     onIntent(FileManagerIntent.NavigateTo(intent.fileItem.path, intent.fileItem.storageType, _state.value.currentServerId))
@@ -93,9 +93,11 @@ class FileManagerViewModel(
                     }
                 }
             }
+
             is FileManagerIntent.ToggleViewMode -> {
                 _state.update { it.copy(isGridView = intent.isGridView) }
             }
+
             is FileManagerIntent.Search -> {
                 _state.update { it.copy(searchQuery = intent.query) }
                 if (intent.query.length >= 3) {
@@ -105,12 +107,13 @@ class FileManagerViewModel(
                     loadFiles(_state.value.currentPath, _state.value.currentStorageType, _state.value.currentServerId)
                 }
             }
+
             is FileManagerIntent.SetSearchActive -> {
                 val wasActive = _state.value.isSearchActive
                 _state.update {
                     it.copy(
                         isSearchActive = intent.isActive,
-                        searchQuery = if (!intent.isActive) "" else it.searchQuery
+                        searchQuery = if (!intent.isActive) "" else it.searchQuery,
                     )
                 }
                 if (wasActive && !intent.isActive) {
@@ -118,6 +121,7 @@ class FileManagerViewModel(
                     loadFiles(_state.value.currentPath, _state.value.currentStorageType, _state.value.currentServerId)
                 }
             }
+
             is FileManagerIntent.SelectFile -> {
                 _state.update {
                     val newSelection = if (it.selectedFiles.contains(intent.path)) {
@@ -128,16 +132,23 @@ class FileManagerViewModel(
                     it.copy(selectedFiles = newSelection)
                 }
             }
+
             is FileManagerIntent.DeleteFiles -> deleteFiles(intent.paths)
+
             is FileManagerIntent.RenameFile -> renameFile(intent.path, intent.newName)
+
             is FileManagerIntent.CreateFolder -> createFolder(intent.name)
+
             FileManagerIntent.Refresh -> loadFiles(_state.value.currentPath, _state.value.currentStorageType, _state.value.currentServerId)
+
             FileManagerIntent.NavigateToAddStorage -> {
                 viewModelScope.launch {
                     _effect.send(FileManagerEffect.NavigateToAddStorage)
                 }
             }
+
             is FileManagerIntent.DeleteRemoteServer -> deleteRemoteServer(intent.serverId)
+
             FileManagerIntent.NavigateToSettings -> {
                 viewModelScope.launch {
                     _effect.send(FileManagerEffect.NavigateToSettings)
@@ -239,7 +250,13 @@ class FileManagerViewModel(
         val root = Environment.getExternalStorageDirectory().absolutePath
         val items = mutableListOf(
             SidebarItem("home", "Home", root, SidebarItemType.SYSTEM_FOLDER, Icons.Default.Home),
-            SidebarItem("downloads", "Downloads", File(root, Environment.DIRECTORY_DOWNLOADS).absolutePath, SidebarItemType.SYSTEM_FOLDER, Icons.Default.Download),
+            SidebarItem(
+                "downloads",
+                "Downloads",
+                File(root, Environment.DIRECTORY_DOWNLOADS).absolutePath,
+                SidebarItemType.SYSTEM_FOLDER,
+                Icons.Default.Download,
+            ),
             SidebarItem("dcim", "Photos", File(root, Environment.DIRECTORY_DCIM).absolutePath, SidebarItemType.SYSTEM_FOLDER, Icons.Default.Photo),
             SidebarItem("movies", "Movies", File(root, Environment.DIRECTORY_MOVIES).absolutePath, SidebarItemType.SYSTEM_FOLDER, Icons.Default.Movie),
             SidebarItem("music", "Music", File(root, Environment.DIRECTORY_MUSIC).absolutePath, SidebarItemType.SYSTEM_FOLDER, Icons.Default.MusicNote),
@@ -253,13 +270,13 @@ class FileManagerViewModel(
                     path = "", // Root of SMB
                     type = SidebarItemType.REMOTE_SERVER,
                     icon = Icons.Default.Storage,
-                    serverId = server.id
-                )
+                    serverId = server.id,
+                ),
             )
         }
 
         items.add(
-            SidebarItem("add_storage", "Add Storage", null, SidebarItemType.ADD_STORAGE, Icons.Default.Add)
+            SidebarItem("add_storage", "Add Storage", null, SidebarItemType.ADD_STORAGE, Icons.Default.Add),
         )
 
         return items

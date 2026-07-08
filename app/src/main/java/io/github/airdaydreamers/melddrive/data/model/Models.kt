@@ -8,22 +8,22 @@ data class FileItem(
     val isDirectory: Boolean,
     val size: Long = 0,
     val lastModified: Long = 0,
-    val storageType: StorageType = StorageType.LOCAL
+    val storageType: StorageType = StorageType.LOCAL,
 )
 
 enum class StorageType {
-    LOCAL, SMB, DLNA, WEBDAV
+    LOCAL,
+    SMB,
+    DLNA,
+    WEBDAV,
 }
 
 enum class SidebarItemType {
-    SYSTEM_FOLDER, FAVORITE, TAG, REMOTE_SERVER, ADD_STORAGE
+    SYSTEM_FOLDER,
+    FAVORITE,
+    TAG,
+    REMOTE_SERVER,
+    ADD_STORAGE,
 }
 
-data class SidebarItem(
-    val id: String,
-    val title: String,
-    val path: String?,
-    val type: SidebarItemType,
-    val icon: ImageVector,
-    val serverId: Long? = null
-)
+data class SidebarItem(val id: String, val title: String, val path: String?, val type: SidebarItemType, val icon: ImageVector, val serverId: Long? = null)

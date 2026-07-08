@@ -9,7 +9,7 @@ data class AddStorageState(
     val isAnonymous: Boolean = false,
     val isLoading: Boolean = false,
     val error: String? = null,
-    val isSuccess: Boolean = false
+    val isSuccess: Boolean = false,
 )
 
 sealed interface AddStorageIntent {

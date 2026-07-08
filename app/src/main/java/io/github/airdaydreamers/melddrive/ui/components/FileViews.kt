@@ -20,22 +20,17 @@ import androidx.compose.ui.unit.dp
 import io.github.airdaydreamers.melddrive.data.model.FileItem
 
 @Composable
-fun FileList(
-    files: List<FileItem>,
-    selectedFiles: Set<String>,
-    onFileClick: (FileItem) -> Unit,
-    onFileLongClick: (FileItem) -> Unit
-) {
+fun FileList(files: List<FileItem>, selectedFiles: Set<String>, onFileClick: (FileItem) -> Unit, onFileLongClick: (FileItem) -> Unit) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp)
+        contentPadding = PaddingValues(16.dp),
     ) {
         items(files) { file ->
             FileListItem(
                 file = file,
                 isSelected = selectedFiles.contains(file.path),
                 onClick = { onFileClick(file) },
-                onLongClick = { onFileLongClick(file) }
+                onLongClick = { onFileLongClick(file) },
             )
         }
     }
@@ -43,59 +38,49 @@ fun FileList(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun FileListItem(
-    file: FileItem,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit
-) {
+fun FileListItem(file: FileItem, isSelected: Boolean, onClick: () -> Unit, onLongClick: () -> Unit) {
     Surface(
         color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(
                 onClick = onClick,
-                onLongClick = onLongClick
-            )
+                onLongClick = onLongClick,
+            ),
     ) {
         Row(
             modifier = Modifier
                 .padding(vertical = 12.dp, horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
                 imageVector = if (file.isDirectory) Icons.Default.Folder else Icons.Default.Description,
                 contentDescription = null,
-                tint = if (file.isDirectory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                tint = if (file.isDirectory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
             )
             Spacer(Modifier.width(16.dp))
             Text(
                 text = file.name,
                 style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
         }
     }
 }
 
 @Composable
-fun FileGrid(
-    files: List<FileItem>,
-    selectedFiles: Set<String>,
-    onFileClick: (FileItem) -> Unit,
-    onFileLongClick: (FileItem) -> Unit
-) {
+fun FileGrid(files: List<FileItem>, selectedFiles: Set<String>, onFileClick: (FileItem) -> Unit, onFileLongClick: (FileItem) -> Unit) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(120.dp),
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp)
+        contentPadding = PaddingValues(16.dp),
     ) {
         items(files) { file ->
             FileGridItem(
                 file = file,
                 isSelected = selectedFiles.contains(file.path),
                 onClick = { onFileClick(file) },
-                onLongClick = { onFileLongClick(file) }
+                onLongClick = { onFileLongClick(file) },
             )
         }
     }
@@ -103,41 +88,36 @@ fun FileGrid(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun FileGridItem(
-    file: FileItem,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit
-) {
+fun FileGridItem(file: FileItem, isSelected: Boolean, onClick: () -> Unit, onLongClick: () -> Unit) {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
         ),
         modifier = Modifier
             .padding(4.dp)
             .combinedClickable(
                 onClick = onClick,
-                onLongClick = onLongClick
-            )
+                onLongClick = onLongClick,
+            ),
     ) {
         Column(
             modifier = Modifier
                 .padding(16.dp)
                 .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Icon(
                 imageVector = if (file.isDirectory) Icons.Default.Folder else Icons.Default.Description,
                 contentDescription = null,
                 modifier = Modifier.size(48.dp),
-                tint = if (file.isDirectory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                tint = if (file.isDirectory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
             )
             Spacer(Modifier.height(8.dp))
             Text(
                 text = file.name,
                 style = MaterialTheme.typography.bodyMedium,
                 maxLines = 2,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )
         }
     }

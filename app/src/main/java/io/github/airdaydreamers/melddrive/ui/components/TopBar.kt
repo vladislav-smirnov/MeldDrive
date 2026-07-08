@@ -48,7 +48,7 @@ fun FileManagerTopBar(
     onToggleViewMode: (Boolean) -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onSearchActiveChange: (Boolean) -> Unit,
-    onSettingsClick: () -> Unit = {}
+    onSettingsClick: () -> Unit = {},
 ) {
     Box(modifier = Modifier.fillMaxWidth()) {
         AnimatedContent(
@@ -60,13 +60,13 @@ fun FileManagerTopBar(
                     slideInHorizontally { -it } + fadeIn() togetherWith slideOutHorizontally { it } + fadeOut()
                 }
             },
-            label = "SearchTransition"
+            label = "SearchTransition",
         ) { active ->
             if (active) {
                 SearchTopBar(
                     searchQuery = searchQuery,
                     onSearchQueryChange = onSearchQueryChange,
-                    onCloseSearch = { onSearchActiveChange(false) }
+                    onCloseSearch = { onSearchActiveChange(false) },
                 )
             } else {
                 DefaultTopBar(
@@ -78,7 +78,7 @@ fun FileManagerTopBar(
                     onNavigateTo = onNavigateTo,
                     onToggleViewMode = onToggleViewMode,
                     onSearchClick = { onSearchActiveChange(true) },
-                    onSettingsClick = onSettingsClick
+                    onSettingsClick = onSettingsClick,
                 )
             }
         }
@@ -96,7 +96,7 @@ fun DefaultTopBar(
     onNavigateTo: (String) -> Unit,
     onToggleViewMode: (Boolean) -> Unit,
     onSearchClick: () -> Unit,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit,
 ) {
     TopAppBar(
         navigationIcon = {
@@ -109,7 +109,7 @@ fun DefaultTopBar(
                 currentPath = currentPath,
                 storageType = storageType,
                 serverName = serverName,
-                onNavigateTo = onNavigateTo
+                onNavigateTo = onNavigateTo,
             )
         },
         actions = {
@@ -119,23 +119,19 @@ fun DefaultTopBar(
             IconButton(onClick = { onToggleViewMode(!isGridView) }) {
                 Icon(
                     if (isGridView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
-                    contentDescription = "Toggle View"
+                    contentDescription = "Toggle View",
                 )
             }
             IconButton(onClick = onSettingsClick) {
                 Icon(Icons.Default.Settings, contentDescription = "Settings")
             }
-        }
+        },
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchTopBar(
-    searchQuery: String,
-    onSearchQueryChange: (String) -> Unit,
-    onCloseSearch: () -> Unit
-) {
+fun SearchTopBar(searchQuery: String, onSearchQueryChange: (String) -> Unit, onCloseSearch: () -> Unit) {
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
@@ -162,8 +158,8 @@ fun SearchTopBar(
                     unfocusedContainerColor = Color.Transparent,
                     disabledContainerColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                )
+                    unfocusedIndicatorColor = Color.Transparent,
+                ),
             )
         },
         actions = {
@@ -172,17 +168,12 @@ fun SearchTopBar(
                     Icon(Icons.Default.Close, contentDescription = "Clear")
                 }
             }
-        }
+        },
     )
 }
 
 @Composable
-fun Breadcrumbs(
-    currentPath: String,
-    storageType: StorageType,
-    serverName: String?,
-    onNavigateTo: (String) -> Unit
-) {
+fun Breadcrumbs(currentPath: String, storageType: StorageType, serverName: String?, onNavigateTo: (String) -> Unit) {
     val breadcrumbItems = remember(currentPath, storageType, serverName) {
         val items = mutableListOf<Pair<String, String>>()
 
@@ -231,16 +222,16 @@ fun Breadcrumbs(
 
     LazyRow(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         itemsIndexed(breadcrumbItems) { index, (name, path) ->
             TextButton(
                 onClick = { onNavigateTo(path) },
-                contentPadding = PaddingValues(horizontal = 4.dp)
+                contentPadding = PaddingValues(horizontal = 4.dp),
             ) {
                 Text(
                     text = name,
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
                 )
             }
             if (index < breadcrumbItems.size - 1) {
@@ -248,7 +239,7 @@ fun Breadcrumbs(
                     Icons.Default.ChevronRight,
                     contentDescription = null,
                     modifier = Modifier.padding(horizontal = 2.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }

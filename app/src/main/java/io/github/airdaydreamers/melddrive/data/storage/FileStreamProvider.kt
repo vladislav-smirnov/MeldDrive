@@ -37,13 +37,7 @@ class FileStreamProvider : ContentProvider() {
         return true
     }
 
-    override fun query(
-        uri: Uri,
-        projection: Array<out String>?,
-        selection: String?,
-        selectionArgs: Array<out String>?,
-        sortOrder: String?
-    ): Cursor? = null
+    override fun query(uri: Uri, projection: Array<out String>?, selection: String?, selectionArgs: Array<out String>?, sortOrder: String?): Cursor? = null
 
     override fun getType(uri: Uri): String? {
         val path = uri.path?.substringAfterLast(".", "")
@@ -54,12 +48,7 @@ class FileStreamProvider : ContentProvider() {
 
     override fun delete(uri: Uri, selection: String?, selectionArgs: Array<out String>?): Int = 0
 
-    override fun update(
-        uri: Uri,
-        values: ContentValues?,
-        selection: String?,
-        selectionArgs: Array<out String>?
-    ): Int = 0
+    override fun update(uri: Uri, values: ContentValues?, selection: String?, selectionArgs: Array<out String>?): Int = 0
 
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor? {
         val segments = uri.pathSegments
@@ -80,7 +69,7 @@ class FileStreamProvider : ContentProvider() {
             storageManager.openProxyFileDescriptor(
                 ParcelFileDescriptor.parseMode(mode),
                 FileStreamCallback(repository, filePath, storageType, serverId, fileSize),
-                handler
+                handler,
             )
         } catch (e: Exception) {
             throw FileNotFoundException("Failed to open proxy file descriptor: ${e.message}")
@@ -92,7 +81,7 @@ class FileStreamProvider : ContentProvider() {
         private val path: String,
         private val storageType: StorageType,
         private val serverId: Long?,
-        private val size: Long
+        private val size: Long,
     ) : ProxyFileDescriptorCallback() {
 
         private var buffer: ByteArray? = null
@@ -146,14 +135,12 @@ class FileStreamProvider : ContentProvider() {
     companion object {
         const val AUTHORITY = "io.github.airdaydreamers.melddrive.filestream"
 
-        fun buildUri(storageType: StorageType, serverId: Long?, path: String): Uri {
-            return Uri.Builder()
-                .scheme("content")
-                .authority(AUTHORITY)
-                .appendPath(storageType.name)
-                .appendPath((serverId ?: -1L).toString())
-                .appendEncodedPath(path)
-                .build()
-        }
+        fun buildUri(storageType: StorageType, serverId: Long?, path: String): Uri = Uri.Builder()
+            .scheme("content")
+            .authority(AUTHORITY)
+            .appendPath(storageType.name)
+            .appendPath((serverId ?: -1L).toString())
+            .appendEncodedPath(path)
+            .build()
     }
 }
