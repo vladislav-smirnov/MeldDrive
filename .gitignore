@@ -48,6 +48,7 @@ google-services.json
 # generated files
 bin/
 gen/
+release/
 
 # Android Studio/IDEA
 .idea
