@@ -17,8 +17,24 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file(
+                System.getenv("KEYSTORE_PATH")
+                    ?: "../release_key_melddrive.jks"
+            )
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+                ?: project.findProperty("RELEASE_STORE_PASSWORD") as String?
+            keyAlias = System.getenv("KEY_ALIAS")
+                ?: project.findProperty("RELEASE_KEY_ALIAS") as String?
+            keyPassword = System.getenv("KEY_PASSWORD")
+                ?: project.findProperty("RELEASE_KEY_PASSWORD") as String?
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             optimization {
                 enable = false
             }
