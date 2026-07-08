@@ -80,12 +80,16 @@ class LocalFileSystemHandler : StorageSource {
         Files.newByteChannel(Paths.get(path)).use { channel ->
             channel.position(offset)
             val buffer = java.nio.ByteBuffer.allocate(length)
-            val bytesRead = channel.read(buffer)
-            if (bytesRead <= 0) return@withContext ByteArray(0)
-            if (bytesRead == length) {
+            while (buffer.hasRemaining()) {
+                val bytesRead = channel.read(buffer)
+                if (bytesRead <= 0) break
+            }
+            val totalBytesRead = buffer.position()
+            if (totalBytesRead <= 0) return@withContext ByteArray(0)
+            if (totalBytesRead == length) {
                 buffer.array()
             } else {
-                buffer.array().copyOf(bytesRead)
+                buffer.array().copyOf(totalBytesRead)
             }
         }
     }

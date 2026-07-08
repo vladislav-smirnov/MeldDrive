@@ -29,6 +29,7 @@ import io.github.airdaydreamers.melddrive.data.repository.FileRepository
 import io.github.airdaydreamers.melddrive.data.repository.ServerRepository
 import io.github.airdaydreamers.melddrive.data.security.CredentialStorage
 import io.github.airdaydreamers.melddrive.data.security.SecurityManager
+import io.github.airdaydreamers.melddrive.data.settings.SettingsManager
 import io.github.airdaydreamers.melddrive.data.storage.FileStreamProvider
 import io.github.airdaydreamers.melddrive.ui.components.AdaptiveNavigation.calculateNavigationType
 import io.github.airdaydreamers.melddrive.ui.screens.AddStorageScreen
@@ -37,6 +38,7 @@ import io.github.airdaydreamers.melddrive.ui.screens.SettingsScreen
 import io.github.airdaydreamers.melddrive.ui.theme.MeldDriveTheme
 import io.github.airdaydreamers.melddrive.ui.viewmodel.AddStorageViewModel
 import io.github.airdaydreamers.melddrive.ui.viewmodel.FileManagerViewModel
+import io.github.airdaydreamers.melddrive.ui.viewmodel.SettingsViewModel
 import io.github.airdaydreamers.melddrive.ui.viewmodel.ViewModelFactory
 import java.io.File
 
@@ -51,9 +53,10 @@ class MainActivity : ComponentActivity() {
         val database = AppDatabase.getDatabase(this)
         val securityManager = SecurityManager(this)
         val credentialStorage = CredentialStorage(this, securityManager)
+        val settingsManager = SettingsManager(this)
         val serverRepository = ServerRepository(database.remoteServerDao(), credentialStorage)
         val repository = FileRepository(database.remoteServerDao(), credentialStorage)
-        val viewModelFactory = ViewModelFactory(repository, serverRepository)
+        val viewModelFactory = ViewModelFactory(repository, serverRepository, settingsManager)
 
         setContent {
             MeldDriveTheme {
@@ -89,7 +92,11 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("settings") {
-                            SettingsScreen(onBack = { navController.popBackStack() })
+                            val viewModel: SettingsViewModel = viewModel(factory = viewModelFactory)
+                            SettingsScreen(
+                                viewModel = viewModel,
+                                onBack = { navController.popBackStack() },
+                            )
                         }
                     }
                 }
