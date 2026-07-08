@@ -18,11 +18,7 @@ import io.github.airdaydreamers.melddrive.ui.viewmodel.AddStorageViewModel
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
-fun AddStorageScreen(
-    viewModel: AddStorageViewModel,
-    onBack: () -> Unit,
-    onSuccess: () -> Unit
-) {
+fun AddStorageScreen(viewModel: AddStorageViewModel, onBack: () -> Unit, onSuccess: () -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
@@ -36,17 +32,13 @@ fun AddStorageScreen(
     AddStorageContent(
         state = state,
         onIntent = viewModel::onIntent,
-        onBack = onBack
+        onBack = onBack,
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddStorageContent(
-    state: AddStorageState,
-    onIntent: (AddStorageIntent) -> Unit,
-    onBack: () -> Unit
-) {
+fun AddStorageContent(state: AddStorageState, onIntent: (AddStorageIntent) -> Unit, onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -55,9 +47,9 @@ fun AddStorageContent(
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
             )
-        }
+        },
     ) { padding ->
         Column(
             modifier = Modifier
@@ -65,33 +57,33 @@ fun AddStorageContent(
                 .padding(16.dp)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             OutlinedTextField(
                 value = state.displayName,
                 onValueChange = { onIntent(AddStorageIntent.DisplayNameChange(it)) },
                 label = { Text("Display Name (e.g. Home NAS)") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
 
             OutlinedTextField(
                 value = state.host,
                 onValueChange = { onIntent(AddStorageIntent.HostChange(it)) },
                 label = { Text("Host Address (IP or hostname)") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
 
             OutlinedTextField(
                 value = state.port,
                 onValueChange = { onIntent(AddStorageIntent.PortChange(it)) },
                 label = { Text("Port (default 445)") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
                     checked = state.isAnonymous,
-                    onCheckedChange = { onIntent(AddStorageIntent.AnonymousChange(it)) }
+                    onCheckedChange = { onIntent(AddStorageIntent.AnonymousChange(it)) },
                 )
                 Text("Anonymous Access")
             }
@@ -101,14 +93,14 @@ fun AddStorageContent(
                     value = state.username,
                     onValueChange = { onIntent(AddStorageIntent.UsernameChange(it)) },
                     label = { Text("Username") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 OutlinedTextField(
                     value = state.password,
                     onValueChange = { onIntent(AddStorageIntent.PasswordChange(it)) },
                     label = { Text("Password") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
 
@@ -119,13 +111,13 @@ fun AddStorageContent(
             Button(
                 onClick = { onIntent(AddStorageIntent.SaveServer) },
                 modifier = Modifier.align(Alignment.End),
-                enabled = !state.isLoading
+                enabled = !state.isLoading,
             ) {
                 if (state.isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(20.dp),
                         color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp
+                        strokeWidth = 2.dp,
                     )
                     Spacer(Modifier.width(8.dp))
                 }

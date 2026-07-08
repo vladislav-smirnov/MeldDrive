@@ -49,10 +49,10 @@ class MainActivity : ComponentActivity() {
         val viewModelFactory = ViewModelFactory(repository)
 
         setContent {
-            MeldDriveTheme() {
+            MeldDriveTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = MaterialTheme.colorScheme.background,
                 ) {
                     val navController = rememberNavController()
 
@@ -66,7 +66,7 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onShowToast = { Toast.makeText(this@MainActivity, it, Toast.LENGTH_SHORT).show() },
                                 onNavigateToAddStorage = { navController.navigate("add_storage") },
-                                onNavigateToSettings = { navController.navigate("settings") }
+                                onNavigateToSettings = { navController.navigate("settings") },
                             )
                         }
                         composable("add_storage") {
@@ -74,7 +74,7 @@ class MainActivity : ComponentActivity() {
                             AddStorageScreen(
                                 viewModel = viewModel,
                                 onBack = { navController.popBackStack() },
-                                onSuccess = { navController.popBackStack() }
+                                onSuccess = { navController.popBackStack() },
                             )
                         }
                         composable("settings") {
@@ -99,8 +99,8 @@ class MainActivity : ComponentActivity() {
             val file = File(fileItem.path)
             FileProvider.getUriForFile(
                 this,
-                "${applicationId}.provider",
-                file
+                "$applicationId.provider",
+                file,
             )
         } else {
             FileStreamProvider.buildUri(fileItem.storageType, serverId, fileItem.path)

@@ -22,7 +22,7 @@ fun FileManagerScreen(
     onOpenFile: (FileManagerEffect.OpenFileExternally) -> Unit,
     onShowToast: (String) -> Unit,
     onNavigateToAddStorage: () -> Unit,
-    onNavigateToSettings: () -> Unit
+    onNavigateToSettings: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -56,23 +56,19 @@ fun FileManagerScreen(
                 TextButton(onClick = { serverToDelete = null }) {
                     Text("Cancel")
                 }
-            }
+            },
         )
     }
 
     FileManagerContent(
         state = state,
         onIntent = viewModel::onIntent,
-        onDeleteServer = { serverToDelete = it }
+        onDeleteServer = { serverToDelete = it },
     )
 }
 
 @Composable
-fun FileManagerContent(
-    state: FileManagerState,
-    onIntent: (FileManagerIntent) -> Unit,
-    onDeleteServer: (Long) -> Unit = {}
-) {
+fun FileManagerContent(state: FileManagerState, onIntent: (FileManagerIntent) -> Unit, onDeleteServer: (Long) -> Unit = {}) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
@@ -97,7 +93,7 @@ fun FileManagerContent(
                 onDeleteServer = onDeleteServer,
                 onItemClick = { item ->
                     if (item.type == SidebarItemType.ADD_STORAGE) {
-                        onIntent(FileManagerIntent.NavigateToAddStorage) // This was missing in intent previously but handled by a separate method, let's add it or keep it as is. Actually FileManagerViewModel has onAddStorageClick.
+                        onIntent(FileManagerIntent.NavigateToAddStorage)
                     } else {
                         val storageType = when (item.type) {
                             SidebarItemType.REMOTE_SERVER -> StorageType.SMB
@@ -106,9 +102,9 @@ fun FileManagerContent(
                         item.path?.let { onIntent(FileManagerIntent.NavigateTo(it, storageType, item.serverId)) }
                     }
                     scope.launch { drawerState.close() }
-                }
+                },
             )
-        }
+        },
     ) {
         Scaffold(
             topBar = {
@@ -124,21 +120,24 @@ fun FileManagerContent(
                     onToggleViewMode = { onIntent(FileManagerIntent.ToggleViewMode(it)) },
                     onSearchQueryChange = { onIntent(FileManagerIntent.Search(it)) },
                     onSearchActiveChange = { onIntent(FileManagerIntent.SetSearchActive(it)) },
-                    onSettingsClick = { onIntent(FileManagerIntent.NavigateToSettings) }
+                    onSettingsClick = { onIntent(FileManagerIntent.NavigateToSettings) },
                 )
-            }
+            },
         ) { paddingValues ->
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
+                    .padding(paddingValues),
             ) {
                 if (state.isLoading) {
                     CircularProgressIndicator(modifier = Modifier.align(androidx.compose.ui.Alignment.Center))
                 } else {
                     val filteredFiles = remember(state.files, state.searchQuery) {
-                        if (state.searchQuery.isEmpty()) state.files
-                        else state.files.filter { it.name.contains(state.searchQuery, ignoreCase = true) }
+                        if (state.searchQuery.isEmpty()) {
+                            state.files
+                        } else {
+                            state.files.filter { it.name.contains(state.searchQuery, ignoreCase = true) }
+                        }
                     }
 
                     if (state.isGridView) {
@@ -146,14 +145,14 @@ fun FileManagerContent(
                             files = filteredFiles,
                             selectedFiles = state.selectedFiles,
                             onFileClick = { onIntent(FileManagerIntent.OpenFile(it)) },
-                            onFileLongClick = { onIntent(FileManagerIntent.SelectFile(it.path)) }
+                            onFileLongClick = { onIntent(FileManagerIntent.SelectFile(it.path)) },
                         )
                     } else {
                         FileList(
                             files = filteredFiles,
                             selectedFiles = state.selectedFiles,
                             onFileClick = { onIntent(FileManagerIntent.OpenFile(it)) },
-                            onFileLongClick = { onIntent(FileManagerIntent.SelectFile(it.path)) }
+                            onFileLongClick = { onIntent(FileManagerIntent.SelectFile(it.path)) },
                         )
                     }
                 }

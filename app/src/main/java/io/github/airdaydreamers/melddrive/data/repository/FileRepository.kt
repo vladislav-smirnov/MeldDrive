@@ -12,10 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
-class FileRepository(
-    private val remoteServerDao: RemoteServerDao,
-    private val credentialStorage: CredentialStorage
-) {
+class FileRepository(private val remoteServerDao: RemoteServerDao, private val credentialStorage: CredentialStorage) {
 
     private val localHandler = LocalFileSystemHandler()
     private val smbHandlers = mutableMapOf<Long, SmbFileSystemHandler>()
@@ -36,6 +33,7 @@ class FileRepository(
     private suspend fun getHandler(storageType: StorageType, serverId: Long?): StorageSource = withContext(Dispatchers.IO) {
         when (storageType) {
             StorageType.LOCAL -> localHandler
+
             StorageType.SMB -> {
                 serverId?.let { id ->
                     smbHandlers.getOrPut(id) {
@@ -57,13 +55,12 @@ class FileRepository(
                     }
                 } ?: throw Exception("Server ID required for SMB")
             }
+
             else -> throw UnsupportedOperationException("Storage type $storageType not supported yet")
         }
     }
 
-    suspend fun listFiles(path: String, storageType: StorageType, serverId: Long? = null): List<FileItem> {
-        return getHandler(storageType, serverId).listFiles(path)
-    }
+    suspend fun listFiles(path: String, storageType: StorageType, serverId: Long? = null): List<FileItem> = getHandler(storageType, serverId).listFiles(path)
 
     suspend fun deleteFile(path: String, storageType: StorageType, serverId: Long?) {
         getHandler(storageType, serverId).deleteFile(path)
@@ -77,15 +74,11 @@ class FileRepository(
         getHandler(storageType, serverId).createFolder(parentPath, name)
     }
 
-    suspend fun getFileSize(path: String, storageType: StorageType, serverId: Long?): Long {
-        return getHandler(storageType, serverId).getFileSize(path)
-    }
+    suspend fun getFileSize(path: String, storageType: StorageType, serverId: Long?): Long = getHandler(storageType, serverId).getFileSize(path)
 
-    suspend fun readFile(path: String, offset: Long, length: Int, storageType: StorageType, serverId: Long?): ByteArray {
-        return getHandler(storageType, serverId).readFile(path, offset, length)
-    }
+    suspend fun readFile(path: String, offset: Long, length: Int, storageType: StorageType, serverId: Long?): ByteArray =
+        getHandler(storageType, serverId).readFile(path, offset, length)
 
-    suspend fun searchFiles(path: String, query: String, storageType: StorageType, serverId: Long?): List<FileItem> {
-        return getHandler(storageType, serverId).searchFiles(path, query)
-    }
+    suspend fun searchFiles(path: String, query: String, storageType: StorageType, serverId: Long?): List<FileItem> =
+        getHandler(storageType, serverId).searchFiles(path, query)
 }

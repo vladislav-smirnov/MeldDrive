@@ -11,12 +11,7 @@ import io.github.airdaydreamers.melddrive.data.model.SidebarItem
 import io.github.airdaydreamers.melddrive.data.model.SidebarItemType
 
 @Composable
-fun FileManagerSidebar(
-    items: List<SidebarItem>,
-    currentPath: String,
-    onItemClick: (SidebarItem) -> Unit,
-    modifier: Modifier = Modifier
-) {
+fun FileManagerSidebar(items: List<SidebarItem>, currentPath: String, onItemClick: (SidebarItem) -> Unit, modifier: Modifier = Modifier) {
     NavigationRail(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -25,7 +20,7 @@ fun FileManagerSidebar(
             modifier = Modifier
                 .fillMaxHeight()
                 .padding(vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items.forEach { item ->
                 val isSelected = item.path == currentPath
@@ -37,7 +32,7 @@ fun FileManagerSidebar(
                     },
                     label = {
                         Text(item.title, style = MaterialTheme.typography.labelSmall)
-                    }
+                    },
                 )
             }
         }
@@ -45,18 +40,13 @@ fun FileManagerSidebar(
 }
 
 @Composable
-fun FileManagerDrawerContent(
-    items: List<SidebarItem>,
-    currentPath: String,
-    onItemClick: (SidebarItem) -> Unit,
-    onDeleteServer: (Long) -> Unit = {}
-) {
+fun FileManagerDrawerContent(items: List<SidebarItem>, currentPath: String, onItemClick: (SidebarItem) -> Unit, onDeleteServer: (Long) -> Unit = {}) {
     ModalDrawerSheet {
         Spacer(Modifier.height(12.dp))
         Text(
             "File Manager",
             modifier = Modifier.padding(16.dp),
-            style = MaterialTheme.typography.titleLarge
+            style = MaterialTheme.typography.titleLarge,
         )
 
         val localItems = items.filter { it.type == SidebarItemType.SYSTEM_FOLDER }
@@ -73,14 +63,14 @@ fun FileManagerDrawerContent(
                 "Remote",
                 modifier = Modifier.padding(horizontal = 28.dp, vertical = 8.dp),
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
             )
             remoteItems.forEach { item ->
                 SidebarDrawerItem(
                     item = item,
                     currentPath = currentPath,
                     onItemClick = onItemClick,
-                    onLongClick = { item.serverId?.let { onDeleteServer(it) } }
+                    onLongClick = { item.serverId?.let { onDeleteServer(it) } },
                 )
             }
         }
@@ -95,31 +85,26 @@ fun FileManagerDrawerContent(
 }
 
 @Composable
-fun SidebarDrawerItem(
-    item: SidebarItem,
-    currentPath: String,
-    onItemClick: (SidebarItem) -> Unit,
-    onLongClick: (() -> Unit)? = null
-) {
+fun SidebarDrawerItem(item: SidebarItem, currentPath: String, onItemClick: (SidebarItem) -> Unit, onLongClick: (() -> Unit)? = null) {
     val isSelected = item.path == currentPath && item.type != SidebarItemType.ADD_STORAGE
 
     NavigationDrawerItem(
         label = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(item.title)
                 if (item.type == SidebarItemType.REMOTE_SERVER && onLongClick != null) {
                     IconButton(
                         onClick = { onLongClick() },
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(24.dp),
                     ) {
                         Icon(
                             Icons.Default.Delete,
                             contentDescription = "Delete Server",
                             modifier = Modifier.size(16.dp),
-                            tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -128,6 +113,6 @@ fun SidebarDrawerItem(
         selected = isSelected,
         onClick = { onItemClick(item) },
         icon = { Icon(item.icon, contentDescription = null) },
-        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
     )
 }

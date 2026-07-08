@@ -15,7 +15,7 @@ data class FileManagerState(
     val isSearchActive: Boolean = false,
     val isLoading: Boolean = false,
     val selectedFiles: Set<String> = emptySet(),
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
 )
 
 sealed interface FileManagerIntent {

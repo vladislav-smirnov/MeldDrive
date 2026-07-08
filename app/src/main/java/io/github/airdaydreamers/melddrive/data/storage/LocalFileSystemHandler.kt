@@ -22,9 +22,21 @@ class LocalFileSystemHandler : StorageSource {
                     path = it.toString(),
                     name = it.name,
                     isDirectory = it.isDirectory(),
-                    size = if (it.isDirectory()) 0 else try { Files.size(it) } catch (e: Exception) { 0 },
-                    lastModified = try { Files.getLastModifiedTime(it).toMillis() } catch (e: Exception) { 0 },
-                    storageType = StorageType.LOCAL
+                    size = if (it.isDirectory()) {
+                        0
+                    } else {
+                        try {
+                            Files.size(it)
+                        } catch (e: Exception) {
+                            0
+                        }
+                    },
+                    lastModified = try {
+                        Files.getLastModifiedTime(it).toMillis()
+                    } catch (e: Exception) {
+                        0
+                    },
+                    storageType = StorageType.LOCAL,
                 )
             }.sortedWith(compareBy({ !it.isDirectory }, { it.name.lowercase() }))
         } else {
@@ -89,8 +101,8 @@ class LocalFileSystemHandler : StorageSource {
                         isDirectory = file.isDirectory,
                         size = if (file.isDirectory) 0 else file.length(),
                         lastModified = file.lastModified(),
-                        storageType = StorageType.LOCAL
-                    )
+                        storageType = StorageType.LOCAL,
+                    ),
                 )
             }
         }

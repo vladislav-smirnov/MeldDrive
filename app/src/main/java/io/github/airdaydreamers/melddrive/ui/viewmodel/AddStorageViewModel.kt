@@ -49,7 +49,7 @@ class AddStorageViewModel(private val repository: FileRepository) : ViewModel() 
                     port = s.port.toIntOrNull() ?: 445,
                     username = if (s.isAnonymous) null else s.username,
                     password = null, // Don't save password in DB
-                    isAnonymous = s.isAnonymous
+                    isAnonymous = s.isAnonymous,
                 )
                 repository.addRemoteServer(server, if (s.isAnonymous) null else s.password)
                 _state.update { it.copy(isLoading = false, isSuccess = true) }

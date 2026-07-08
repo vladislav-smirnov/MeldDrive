@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.spotless)
 }
 
 android {
@@ -19,10 +21,11 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file(
-                System.getenv("KEYSTORE_PATH")
-                    ?: "../release_key_melddrive.jks"
-            )
+            storeFile =
+                file(
+                    System.getenv("KEYSTORE_PATH")
+                        ?: "../release_key_melddrive.jks",
+                )
             storePassword = System.getenv("KEYSTORE_PASSWORD")
                 ?: project.findProperty("RELEASE_STORE_PASSWORD") as String?
             keyAlias = System.getenv("KEY_ALIAS")

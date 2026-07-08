@@ -53,7 +53,7 @@ class SmbFileSystemHandler(private val server: RemoteServer) : StorageSource {
                     path = share.netName,
                     name = share.netName,
                     isDirectory = true,
-                    storageType = StorageType.SMB
+                    storageType = StorageType.SMB,
                 )
             }
         } else {
@@ -70,7 +70,7 @@ class SmbFileSystemHandler(private val server: RemoteServer) : StorageSource {
                         isDirectory = isDir,
                         size = if (isDir) 0 else info.endOfFile,
                         lastModified = info.changeTime.toEpochMillis(),
-                        storageType = StorageType.SMB
+                        storageType = StorageType.SMB,
                     )
                 }.filter { it.name != "." && it.name != ".." }
             }
@@ -106,7 +106,14 @@ class SmbFileSystemHandler(private val server: RemoteServer) : StorageSource {
         val targetPath = if (parentPath.isEmpty()) newName else "$parentPath/$newName"
 
         (session.connectShare(shareName) as DiskShare).use { share ->
-            share.open(relativePath, EnumSet.of(com.hierynomus.msdtyp.AccessMask.GENERIC_ALL), null, SMB2ShareAccess.ALL, SMB2CreateDisposition.FILE_OPEN, null).use { entry ->
+            share.open(
+                relativePath,
+                EnumSet.of(com.hierynomus.msdtyp.AccessMask.GENERIC_ALL),
+                null,
+                SMB2ShareAccess.ALL,
+                SMB2CreateDisposition.FILE_OPEN,
+                null,
+            ).use { entry ->
                 entry.rename(targetPath)
             }
             true
@@ -151,7 +158,7 @@ class SmbFileSystemHandler(private val server: RemoteServer) : StorageSource {
                 null,
                 SMB2ShareAccess.ALL,
                 SMB2CreateDisposition.FILE_OPEN,
-                null
+                null,
             ).use { file ->
                 val buffer = ByteArray(length)
                 val bytesRead = file.read(buffer, offset, 0, length)
@@ -181,8 +188,8 @@ class SmbFileSystemHandler(private val server: RemoteServer) : StorageSource {
                         path = share.netName,
                         name = share.netName,
                         isDirectory = true,
-                        storageType = StorageType.SMB
-                    )
+                        storageType = StorageType.SMB,
+                    ),
                 )
             }
         } else {
@@ -211,8 +218,8 @@ class SmbFileSystemHandler(private val server: RemoteServer) : StorageSource {
                         isDirectory = isDir,
                         size = if (isDir) 0 else info.endOfFile,
                         lastModified = info.changeTime.toEpochMillis(),
-                        storageType = StorageType.SMB
-                    )
+                        storageType = StorageType.SMB,
+                    ),
                 )
             }
 
