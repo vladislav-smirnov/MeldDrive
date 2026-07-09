@@ -52,15 +52,15 @@ class FileRepository(private val remoteServerDao: RemoteServerDao, private val c
 
     suspend fun listFiles(path: String, storageType: StorageType, serverId: Long? = null): List<FileItem> = getHandler(storageType, serverId).listFiles(path)
 
-    suspend fun deleteFile(path: String, storageType: StorageType, serverId: Long?) {
+    suspend fun deleteFile(path: String, storageType: StorageType, serverId: Long?) = withContext(Dispatchers.IO) {
         getHandler(storageType, serverId).deleteFile(path)
     }
 
-    suspend fun renameFile(path: String, newName: String, storageType: StorageType, serverId: Long?) {
+    suspend fun renameFile(path: String, newName: String, storageType: StorageType, serverId: Long?) = withContext(Dispatchers.IO) {
         getHandler(storageType, serverId).renameFile(path, newName)
     }
 
-    suspend fun createFolder(parentPath: String, name: String, storageType: StorageType, serverId: Long?) {
+    suspend fun createFolder(parentPath: String, name: String, storageType: StorageType, serverId: Long?) = withContext(Dispatchers.IO) {
         getHandler(storageType, serverId).createFolder(parentPath, name)
     }
 

@@ -192,13 +192,13 @@ fun Breadcrumbs(currentPath: String, storageType: StorageType, serverName: Strin
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        itemsIndexed(breadcrumbItems) { index, (name, path) ->
+        itemsIndexed(breadcrumbItems) { index, breadcrumbItem ->
             TextButton(
-                onClick = { onNavigateTo(path) },
+                onClick = { onNavigateTo(breadcrumbItem.path) },
                 contentPadding = PaddingValues(horizontal = 4.dp),
             ) {
                 Text(
-                    text = name,
+                    text = breadcrumbItem.name,
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
@@ -214,16 +214,16 @@ fun Breadcrumbs(currentPath: String, storageType: StorageType, serverName: Strin
     }
 }
 
-private fun getBreadcrumbItems(currentPath: String, storageType: StorageType, serverName: String?): List<Pair<String, String>> = when (storageType) {
+private fun getBreadcrumbItems(currentPath: String, storageType: StorageType, serverName: String?): List<BreadcrumbItem> = when (storageType) {
     StorageType.LOCAL -> getLocalBreadcrumbs(currentPath)
     StorageType.SMB -> getSmbBreadcrumbs(currentPath, serverName)
     else -> emptyList()
 }
 
-private fun getLocalBreadcrumbs(currentPath: String): List<Pair<String, String>> {
-    val items = mutableListOf<Pair<String, String>>()
+private fun getLocalBreadcrumbs(currentPath: String): List<BreadcrumbItem> {
+    val items = mutableListOf<BreadcrumbItem>()
     val rootPath = Environment.getExternalStorageDirectory().absolutePath
-    items.add("Internal Storage" to rootPath)
+    items.add(BreadcrumbItem("Internal Storage", rootPath))
 
     if (currentPath.startsWith(rootPath)) {
         val relativePath = currentPath.removePrefix(rootPath).trimStart('/')
@@ -233,31 +233,31 @@ private fun getLocalBreadcrumbs(currentPath: String): List<Pair<String, String>>
         }
     } else {
         val parts = currentPath.split("/").filter { it.isNotEmpty() }
-        items.add("Root" to "/")
+        items.add(BreadcrumbItem("Root", "/"))
         addRootBreadcrumbParts(items, parts)
     }
     return items
 }
 
-private fun addLocalBreadcrumbParts(items: MutableList<Pair<String, String>>, parts: List<String>, rootPath: String) {
+private fun addLocalBreadcrumbParts(items: MutableList<BreadcrumbItem>, parts: List<String>, rootPath: String) {
     var runningPath = rootPath
     parts.forEach { part ->
         runningPath = if (runningPath.endsWith('/')) runningPath + part else "$runningPath/$part"
-        items.add(part to runningPath)
+        items.add(BreadcrumbItem(part, runningPath))
     }
 }
 
-private fun addRootBreadcrumbParts(items: MutableList<Pair<String, String>>, parts: List<String>) {
+private fun addRootBreadcrumbParts(items: MutableList<BreadcrumbItem>, parts: List<String>) {
     var runningPath = if (parts.isNotEmpty() && parts[0].isEmpty()) "/" else ""
     parts.forEach { part ->
         runningPath = if (runningPath == "/") runningPath + part else "$runningPath/$part"
-        items.add(part to runningPath)
+        items.add(BreadcrumbItem(part, runningPath))
     }
 }
 
-private fun getSmbBreadcrumbs(currentPath: String, serverName: String?): List<Pair<String, String>> {
-    val items = mutableListOf<Pair<String, String>>()
-    items.add((serverName ?: "Remote") to "")
+private fun getSmbBreadcrumbs(currentPath: String, serverName: String?): List<BreadcrumbItem> {
+    val items = mutableListOf<BreadcrumbItem>()
+    items.add(BreadcrumbItem(serverName ?: "Remote", ""))
     if (currentPath.isNotEmpty()) {
         val parts = currentPath.split("/").filter { it.isNotEmpty() }
         addSmbBreadcrumbParts(items, parts)
@@ -265,10 +265,12 @@ private fun getSmbBreadcrumbs(currentPath: String, serverName: String?): List<Pa
     return items
 }
 
-private fun addSmbBreadcrumbParts(items: MutableList<Pair<String, String>>, parts: List<String>) {
+private fun addSmbBreadcrumbParts(items: MutableList<BreadcrumbItem>, parts: List<String>) {
     var runningPath = ""
     parts.forEach { part ->
         runningPath = if (runningPath.isEmpty()) part else "$runningPath/$part"
-        items.add(part to runningPath)
+        items.add(BreadcrumbItem(part, runningPath))
     }
 }
+
+private data class BreadcrumbItem(val name: String, val path: String)
