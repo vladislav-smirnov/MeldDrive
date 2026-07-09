@@ -22,7 +22,15 @@ import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -175,49 +183,7 @@ fun SearchTopBar(searchQuery: String, onSearchQueryChange: (String) -> Unit, onC
 @Composable
 fun Breadcrumbs(currentPath: String, storageType: StorageType, serverName: String?, onNavigateTo: (String) -> Unit) {
     val breadcrumbItems = remember(currentPath, storageType, serverName) {
-        val items = mutableListOf<Pair<String, String>>()
-
-        if (storageType == StorageType.LOCAL) {
-            val rootPath = Environment.getExternalStorageDirectory().absolutePath
-            items.add("Internal Storage" to rootPath)
-
-            if (currentPath.startsWith(rootPath)) {
-                val relativePath = currentPath.removePrefix(rootPath).trimStart('/')
-                if (relativePath.isNotEmpty()) {
-                    val parts = relativePath.split('/')
-                    var runningPath = rootPath
-                    parts.forEach { part ->
-                        runningPath = if (runningPath.endsWith('/')) runningPath + part else "$runningPath/$part"
-                        items.add(part to runningPath)
-                    }
-                }
-            } else {
-                // Fallback for paths outside external storage (if any)
-                val parts = currentPath.split("/").filter { it.isNotEmpty() }
-                var runningPath = if (currentPath.startsWith("/")) "/" else ""
-                if (parts.isEmpty()) {
-                    items.add("Root" to "/")
-                } else {
-                    items.add("Root" to "/")
-                    parts.forEach { part ->
-                        runningPath = if (runningPath == "/") runningPath + part else "$runningPath/$part"
-                        items.add(part to runningPath)
-                    }
-                }
-            }
-        } else if (storageType == StorageType.SMB) {
-            items.add((serverName ?: "Remote") to "")
-            if (currentPath.isNotEmpty()) {
-                val parts = currentPath.split("/").filter { it.isNotEmpty() }
-                var runningPath = ""
-                parts.forEach { part ->
-                    runningPath = if (runningPath.isEmpty()) part else "$runningPath/$part"
-                    items.add(part to runningPath)
-                }
-            }
-        }
-
-        items
+        getBreadcrumbItems(currentPath, storageType, serverName)
     }
 
     LazyRow(
@@ -243,5 +209,64 @@ fun Breadcrumbs(currentPath: String, storageType: StorageType, serverName: Strin
                 )
             }
         }
+    }
+}
+
+private fun getBreadcrumbItems(currentPath: String, storageType: StorageType, serverName: String?): List<Pair<String, String>> = when (storageType) {
+    StorageType.LOCAL -> getLocalBreadcrumbs(currentPath)
+    StorageType.SMB -> getSmbBreadcrumbs(currentPath, serverName)
+    else -> emptyList()
+}
+
+private fun getLocalBreadcrumbs(currentPath: String): List<Pair<String, String>> {
+    val items = mutableListOf<Pair<String, String>>()
+    val rootPath = Environment.getExternalStorageDirectory().absolutePath
+    items.add("Internal Storage" to rootPath)
+
+    if (currentPath.startsWith(rootPath)) {
+        val relativePath = currentPath.removePrefix(rootPath).trimStart('/')
+        if (relativePath.isNotEmpty()) {
+            val parts = relativePath.split('/')
+            addLocalBreadcrumbParts(items, parts, rootPath)
+        }
+    } else {
+        val parts = currentPath.split("/").filter { it.isNotEmpty() }
+        items.add("Root" to "/")
+        addRootBreadcrumbParts(items, parts)
+    }
+    return items
+}
+
+private fun addLocalBreadcrumbParts(items: MutableList<Pair<String, String>>, parts: List<String>, rootPath: String) {
+    var runningPath = rootPath
+    parts.forEach { part ->
+        runningPath = if (runningPath.endsWith('/')) runningPath + part else "$runningPath/$part"
+        items.add(part to runningPath)
+    }
+}
+
+private fun addRootBreadcrumbParts(items: MutableList<Pair<String, String>>, parts: List<String>) {
+    var runningPath = if (parts.isNotEmpty() && parts[0].isEmpty()) "/" else ""
+    parts.forEach { part ->
+        runningPath = if (runningPath == "/") runningPath + part else "$runningPath/$part"
+        items.add(part to runningPath)
+    }
+}
+
+private fun getSmbBreadcrumbs(currentPath: String, serverName: String?): List<Pair<String, String>> {
+    val items = mutableListOf<Pair<String, String>>()
+    items.add((serverName ?: "Remote") to "")
+    if (currentPath.isNotEmpty()) {
+        val parts = currentPath.split("/").filter { it.isNotEmpty() }
+        addSmbBreadcrumbParts(items, parts)
+    }
+    return items
+}
+
+private fun addSmbBreadcrumbParts(items: MutableList<Pair<String, String>>, parts: List<String>) {
+    var runningPath = ""
+    parts.forEach { part ->
+        runningPath = if (runningPath.isEmpty()) part else "$runningPath/$part"
+        items.add(part to runningPath)
     }
 }

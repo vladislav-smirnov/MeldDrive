@@ -1,12 +1,33 @@
 package io.github.airdaydreamers.melddrive.ui.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -51,78 +72,96 @@ fun AddStorageContent(state: AddStorageState, onIntent: (AddStorageIntent) -> Un
             )
         },
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .padding(16.dp)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            OutlinedTextField(
-                value = state.displayName,
-                onValueChange = { onIntent(AddStorageIntent.DisplayNameChange(it)) },
-                label = { Text("Display Name (e.g. Home NAS)") },
-                modifier = Modifier.fillMaxWidth(),
-            )
+        AddStorageForm(
+            state = state,
+            onIntent = onIntent,
+            modifier = Modifier.padding(padding),
+        )
+    }
+}
 
-            OutlinedTextField(
-                value = state.host,
-                onValueChange = { onIntent(AddStorageIntent.HostChange(it)) },
-                label = { Text("Host Address (IP or hostname)") },
-                modifier = Modifier.fillMaxWidth(),
-            )
+@Composable
+private fun AddStorageForm(state: AddStorageState, onIntent: (AddStorageIntent) -> Unit, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .padding(16.dp)
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        AddStorageFields(state, onIntent)
 
-            OutlinedTextField(
-                value = state.port,
-                onValueChange = { onIntent(AddStorageIntent.PortChange(it)) },
-                label = { Text("Port (default 445)") },
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(
-                    checked = state.isAnonymous,
-                    onCheckedChange = { onIntent(AddStorageIntent.AnonymousChange(it)) },
-                )
-                Text("Anonymous Access")
-            }
-
-            if (!state.isAnonymous) {
-                OutlinedTextField(
-                    value = state.username,
-                    onValueChange = { onIntent(AddStorageIntent.UsernameChange(it)) },
-                    label = { Text("Username") },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-
-                OutlinedTextField(
-                    value = state.password,
-                    onValueChange = { onIntent(AddStorageIntent.PasswordChange(it)) },
-                    label = { Text("Password") },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-
-            if (state.error != null) {
-                Text(state.error, color = MaterialTheme.colorScheme.error)
-            }
-
-            Button(
-                onClick = { onIntent(AddStorageIntent.SaveServer) },
-                modifier = Modifier.align(Alignment.End),
-                enabled = !state.isLoading,
-            ) {
-                if (state.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp,
-                    )
-                    Spacer(Modifier.width(8.dp))
-                }
-                Text("Connect & Save")
-            }
+        if (state.error != null) {
+            Text(state.error, color = MaterialTheme.colorScheme.error)
         }
+
+        AddStorageButtons(state, onIntent)
+    }
+}
+
+@Composable
+private fun AddStorageFields(state: AddStorageState, onIntent: (AddStorageIntent) -> Unit) {
+    OutlinedTextField(
+        value = state.displayName,
+        onValueChange = { onIntent(AddStorageIntent.DisplayNameChange(it)) },
+        label = { Text("Display Name (e.g. Home NAS)") },
+        modifier = Modifier.fillMaxWidth(),
+    )
+
+    OutlinedTextField(
+        value = state.host,
+        onValueChange = { onIntent(AddStorageIntent.HostChange(it)) },
+        label = { Text("Host Address (IP or hostname)") },
+        modifier = Modifier.fillMaxWidth(),
+    )
+
+    OutlinedTextField(
+        value = state.port,
+        onValueChange = { onIntent(AddStorageIntent.PortChange(it)) },
+        label = { Text("Port (default 445)") },
+        modifier = Modifier.fillMaxWidth(),
+    )
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Checkbox(
+            checked = state.isAnonymous,
+            onCheckedChange = { onIntent(AddStorageIntent.AnonymousChange(it)) },
+        )
+        Text("Anonymous Access")
+    }
+
+    if (!state.isAnonymous) {
+        OutlinedTextField(
+            value = state.username,
+            onValueChange = { onIntent(AddStorageIntent.UsernameChange(it)) },
+            label = { Text("Username") },
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        OutlinedTextField(
+            value = state.password,
+            onValueChange = { onIntent(AddStorageIntent.PasswordChange(it)) },
+            label = { Text("Password") },
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun ColumnScope.AddStorageButtons(state: AddStorageState, onIntent: (AddStorageIntent) -> Unit) {
+    Button(
+        onClick = { onIntent(AddStorageIntent.SaveServer) },
+        modifier = Modifier.align(Alignment.End),
+        enabled = !state.isLoading,
+    ) {
+        if (state.isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(20.dp),
+                color = MaterialTheme.colorScheme.onPrimary,
+                strokeWidth = 2.dp,
+            )
+            Spacer(Modifier.width(8.dp))
+        }
+        Text("Connect & Save")
     }
 }

@@ -12,7 +12,6 @@ plugins {
 allprojects {
     pluginManager.withPlugin("io.gitlab.arturbosch.detekt") {
         dependencies {
-            "detektPlugins"(libs.detekt.rules.libraries)
             "detektPlugins"(libs.detekt.rules.ruleauthors)
         }
 

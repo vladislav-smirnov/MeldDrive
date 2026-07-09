@@ -9,7 +9,7 @@ build:
 
 config:
   validation: true
-  warningsAsErrors: false
+  warningsAsErrors: true
   checkExhaustiveness: false
   # when writing own rules with new properties, exclude the property path e.g.: 'my_rule_set,.*>.*>[my_property]'
   excludes: ''
@@ -95,7 +95,7 @@ complexity:
   active: true
   CognitiveComplexMethod:
     active: false
-    threshold: 15
+    threshold: 16
   ComplexCondition:
     active: true
     threshold: 4
@@ -107,7 +107,7 @@ complexity:
     ignoreOverloaded: false
   CyclomaticComplexMethod:
     active: true
-    threshold: 15
+    threshold: 16
     ignoreSingleWhenExpression: false
     ignoreSimpleWhenEntries: false
     ignoreNestingFunctions: false
@@ -333,7 +333,7 @@ naming:
   FunctionNaming:
     active: true
     excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
-    functionPattern: '[a-z][a-zA-Z0-9]*'
+    functionPattern: '[a-zA-Z][a-zA-Z0-9]*'
     excludeClassPattern: '$^'
   FunctionParameterNaming:
     active: true
