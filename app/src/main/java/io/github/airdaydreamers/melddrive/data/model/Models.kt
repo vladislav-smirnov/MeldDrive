@@ -27,3 +27,6 @@ enum class SidebarItemType {
 }
 
 data class SidebarItem(val id: String, val title: String, val path: String?, val type: SidebarItemType, val icon: ImageVector, val serverId: Long? = null)
+
+open class MeldDriveException(message: String, cause: Throwable? = null) : Exception(message, cause)
+class StorageException(message: String, cause: Throwable? = null) : MeldDriveException(message, cause)

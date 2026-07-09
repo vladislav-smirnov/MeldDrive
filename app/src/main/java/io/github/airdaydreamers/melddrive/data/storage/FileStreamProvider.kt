@@ -12,12 +12,14 @@ import android.os.storage.StorageManager
 import android.system.ErrnoException
 import android.system.OsConstants
 import io.github.airdaydreamers.melddrive.data.db.AppDatabase
+import io.github.airdaydreamers.melddrive.data.model.MeldDriveException
 import io.github.airdaydreamers.melddrive.data.model.StorageType
 import io.github.airdaydreamers.melddrive.data.repository.FileRepository
 import io.github.airdaydreamers.melddrive.data.security.CredentialStorage
 import io.github.airdaydreamers.melddrive.data.security.SecurityManager
 import kotlinx.coroutines.runBlocking
 import java.io.FileNotFoundException
+import java.io.IOException
 
 class FileStreamProvider : ContentProvider() {
 
@@ -52,7 +54,7 @@ class FileStreamProvider : ContentProvider() {
 
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor? {
         val segments = uri.pathSegments
-        if (segments.size < 3) throw FileNotFoundException("Invalid URI: $uri")
+        if (segments.size < MIN_URI_SEGMENTS) throw FileNotFoundException("Invalid URI: $uri")
 
         val storageType = StorageType.valueOf(segments[0])
         val serverId = segments[1].toLong().let { if (it == -1L) null else it }
@@ -71,8 +73,8 @@ class FileStreamProvider : ContentProvider() {
                 FileStreamCallback(repository, filePath, storageType, serverId, fileSize),
                 handler,
             )
-        } catch (e: Exception) {
-            throw FileNotFoundException("Failed to open proxy file descriptor: ${e.message}")
+        } catch (ignored: IOException) {
+            throw FileNotFoundException("Failed to open proxy file descriptor")
         }
     }
 
@@ -86,7 +88,7 @@ class FileStreamProvider : ContentProvider() {
 
         private var buffer: ByteArray? = null
         private var bufferOffset: Long = -1L
-        private val bufferSize = 1024 * 1024 // 1MB buffer
+        private val bufferSize = DEFAULT_BUFFER_SIZE
 
         override fun onGetSize(): Long = size
 
@@ -94,36 +96,44 @@ class FileStreamProvider : ContentProvider() {
             if (size <= 0) return 0
 
             return try {
-                val currentBuffer = buffer
-                if (currentBuffer != null && offset >= bufferOffset && offset + size <= bufferOffset + currentBuffer.size) {
-                    // Data is in buffer
-                    val startInBuf = (offset - bufferOffset).toInt()
-                    System.arraycopy(currentBuffer, startInBuf, data, 0, size)
-                    size
-                } else if (size >= bufferSize) {
-                    // Request is larger than buffer, read directly
-                    val bytes = runBlocking {
-                        repository.readFile(path, offset, size, storageType, serverId)
-                    }
-                    val copySize = Math.min(size, bytes.size)
-                    System.arraycopy(bytes, 0, data, 0, copySize)
-                    copySize
-                } else {
-                    // Read into buffer
-                    val fetched = runBlocking {
-                        repository.readFile(path, offset, bufferSize, storageType, serverId)
-                    }
-                    if (fetched.isEmpty()) return 0
-
-                    buffer = fetched
-                    bufferOffset = offset
-
-                    val copySize = Math.min(size, fetched.size)
-                    System.arraycopy(fetched, 0, data, 0, copySize)
-                    copySize
-                }
-            } catch (e: Exception) {
+                readFromRepository(offset, size, data)
+            } catch (ignored: IOException) {
                 throw ErrnoException("onRead", OsConstants.EIO)
+            } catch (ignored: MeldDriveException) {
+                throw ErrnoException("onRead", OsConstants.EIO)
+            }
+        }
+
+        private fun readFromRepository(offset: Long, size: Int, data: ByteArray): Int {
+            val currentBuffer = buffer
+            return if (currentBuffer != null && offset >= bufferOffset && offset + size <= bufferOffset + currentBuffer.size) {
+                val startInBuf = (offset - bufferOffset).toInt()
+                System.arraycopy(currentBuffer, startInBuf, data, 0, size)
+                size
+            } else if (size >= bufferSize) {
+                val bytes = runBlocking {
+                    repository.readFile(path, offset, size, storageType, serverId)
+                }
+                val copySize = Math.min(size, bytes.size)
+                System.arraycopy(bytes, 0, data, 0, copySize)
+                copySize
+            } else {
+                fetchIntoBuffer(offset, size, data)
+            }
+        }
+
+        private fun fetchIntoBuffer(offset: Long, size: Int, data: ByteArray): Int {
+            val fetched = runBlocking {
+                repository.readFile(path, offset, bufferSize, storageType, serverId)
+            }
+            return if (fetched.isEmpty()) {
+                0
+            } else {
+                buffer = fetched
+                bufferOffset = offset
+                val copySize = Math.min(size, fetched.size)
+                System.arraycopy(fetched, 0, data, 0, copySize)
+                copySize
             }
         }
 
@@ -134,6 +144,8 @@ class FileStreamProvider : ContentProvider() {
 
     companion object {
         const val AUTHORITY = "io.github.airdaydreamers.melddrive.filestream"
+        private const val DEFAULT_BUFFER_SIZE = 1048576 // 1MB
+        private const val MIN_URI_SEGMENTS = 3
 
         fun buildUri(storageType: StorageType, serverId: Long?, path: String): Uri = Uri.Builder()
             .scheme("content")

@@ -3,7 +3,8 @@ package io.github.airdaydreamers.melddrive.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.airdaydreamers.melddrive.data.db.RemoteServer
-import io.github.airdaydreamers.melddrive.data.repository.FileRepository
+import io.github.airdaydreamers.melddrive.data.model.StorageException
+import io.github.airdaydreamers.melddrive.data.repository.ServerRepository
 import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageEffect
 import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageIntent
 import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageState
@@ -13,8 +14,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.IOException
 
-class AddStorageViewModel(private val repository: FileRepository) : ViewModel() {
+class AddStorageViewModel(private val serverRepository: ServerRepository) : ViewModel() {
     private val _state = MutableStateFlow(AddStorageState())
     val state = _state.asStateFlow()
 
@@ -51,10 +53,12 @@ class AddStorageViewModel(private val repository: FileRepository) : ViewModel() 
                     password = null, // Don't save password in DB
                     isAnonymous = s.isAnonymous,
                 )
-                repository.addRemoteServer(server, if (s.isAnonymous) null else s.password)
+                serverRepository.addRemoteServer(server, if (s.isAnonymous) null else s.password)
                 _state.update { it.copy(isLoading = false, isSuccess = true) }
                 _effect.send(AddStorageEffect.NavigateBack)
-            } catch (e: Exception) {
+            } catch (e: StorageException) {
+                _state.update { it.copy(isLoading = false, error = e.message) }
+            } catch (e: IOException) {
                 _state.update { it.copy(isLoading = false, error = e.message) }
             }
         }

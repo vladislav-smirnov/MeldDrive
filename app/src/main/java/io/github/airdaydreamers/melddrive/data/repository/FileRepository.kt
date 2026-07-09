@@ -1,15 +1,14 @@
 package io.github.airdaydreamers.melddrive.data.repository
 
-import io.github.airdaydreamers.melddrive.data.db.RemoteServer
 import io.github.airdaydreamers.melddrive.data.db.RemoteServerDao
 import io.github.airdaydreamers.melddrive.data.model.FileItem
+import io.github.airdaydreamers.melddrive.data.model.StorageException
 import io.github.airdaydreamers.melddrive.data.model.StorageType
 import io.github.airdaydreamers.melddrive.data.security.CredentialStorage
 import io.github.airdaydreamers.melddrive.data.storage.LocalFileSystemHandler
 import io.github.airdaydreamers.melddrive.data.storage.SmbFileSystemHandler
 import io.github.airdaydreamers.melddrive.data.storage.StorageSource
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
 class FileRepository(private val remoteServerDao: RemoteServerDao, private val credentialStorage: CredentialStorage) {
@@ -17,17 +16,8 @@ class FileRepository(private val remoteServerDao: RemoteServerDao, private val c
     private val localHandler = LocalFileSystemHandler()
     private val smbHandlers = mutableMapOf<Long, SmbFileSystemHandler>()
 
-    fun getRemoteServers(): Flow<List<RemoteServer>> = remoteServerDao.getAllServers()
-
-    suspend fun addRemoteServer(server: RemoteServer, password: String?) = withContext(Dispatchers.IO) {
-        val id = remoteServerDao.insertServer(server)
-        credentialStorage.saveCredentials(id, server.username, password)
-    }
-
-    suspend fun deleteRemoteServer(server: RemoteServer) = withContext(Dispatchers.IO) {
-        remoteServerDao.deleteServer(server)
-        credentialStorage.removeCredentials(server.id)
-        smbHandlers.remove(server.id)
+    fun clearHandler(serverId: Long) {
+        smbHandlers.remove(serverId)
     }
 
     private suspend fun getHandler(storageType: StorageType, serverId: Long?): StorageSource = withContext(Dispatchers.IO) {
@@ -37,7 +27,7 @@ class FileRepository(private val remoteServerDao: RemoteServerDao, private val c
             StorageType.SMB -> {
                 serverId?.let { id ->
                     smbHandlers.getOrPut(id) {
-                        val server = remoteServerDao.getServerById(id) ?: throw Exception("Server not found")
+                        val server = remoteServerDao.getServerById(id) ?: throw StorageException("Server not found")
                         var username = credentialStorage.getUsername(id)
                         var password = credentialStorage.getPassword(id)
 
@@ -53,7 +43,7 @@ class FileRepository(private val remoteServerDao: RemoteServerDao, private val c
                         val serverWithCredentials = server.copy(username = username, password = password)
                         SmbFileSystemHandler(serverWithCredentials)
                     }
-                } ?: throw Exception("Server ID required for SMB")
+                } ?: throw StorageException("Server ID required for SMB")
             }
 
             else -> throw UnsupportedOperationException("Storage type $storageType not supported yet")

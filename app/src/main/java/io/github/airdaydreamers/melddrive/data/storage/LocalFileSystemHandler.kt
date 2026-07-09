@@ -5,6 +5,7 @@ import io.github.airdaydreamers.melddrive.data.model.StorageType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.io.path.deleteIfExists
@@ -27,13 +28,13 @@ class LocalFileSystemHandler : StorageSource {
                     } else {
                         try {
                             Files.size(it)
-                        } catch (e: Exception) {
+                        } catch (ignored: IOException) {
                             0
                         }
                     },
                     lastModified = try {
                         Files.getLastModifiedTime(it).toMillis()
-                    } catch (e: Exception) {
+                    } catch (ignored: IOException) {
                         0
                     },
                     storageType = StorageType.LOCAL,

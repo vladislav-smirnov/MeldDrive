@@ -1,5 +1,6 @@
 package io.github.airdaydreamers.melddrive
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Bundle
 import android.os.Environment
@@ -23,6 +24,7 @@ import io.github.airdaydreamers.melddrive.data.db.AppDatabase
 import io.github.airdaydreamers.melddrive.data.model.FileItem
 import io.github.airdaydreamers.melddrive.data.model.StorageType
 import io.github.airdaydreamers.melddrive.data.repository.FileRepository
+import io.github.airdaydreamers.melddrive.data.repository.ServerRepository
 import io.github.airdaydreamers.melddrive.data.security.CredentialStorage
 import io.github.airdaydreamers.melddrive.data.security.SecurityManager
 import io.github.airdaydreamers.melddrive.data.storage.FileStreamProvider
@@ -45,8 +47,9 @@ class MainActivity : ComponentActivity() {
         val database = AppDatabase.getDatabase(this)
         val securityManager = SecurityManager(this)
         val credentialStorage = CredentialStorage(this, securityManager)
+        val serverRepository = ServerRepository(database.remoteServerDao(), credentialStorage)
         val repository = FileRepository(database.remoteServerDao(), credentialStorage)
-        val viewModelFactory = ViewModelFactory(repository)
+        val viewModelFactory = ViewModelFactory(repository, serverRepository)
 
         setContent {
             MeldDriveTheme {
@@ -115,7 +118,7 @@ class MainActivity : ComponentActivity() {
 
         try {
             startActivity(intent)
-        } catch (e: Exception) {
+        } catch (ignored: ActivityNotFoundException) {
             Toast.makeText(this, "No app found to open this file type", Toast.LENGTH_SHORT).show()
         }
     }
