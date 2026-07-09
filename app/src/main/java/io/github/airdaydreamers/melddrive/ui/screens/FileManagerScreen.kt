@@ -2,12 +2,14 @@ package io.github.airdaydreamers.melddrive.ui.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.PermanentNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -23,10 +25,13 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.airdaydreamers.melddrive.data.model.SidebarItemType
 import io.github.airdaydreamers.melddrive.data.model.StorageType
+import io.github.airdaydreamers.melddrive.ui.components.AdaptiveNavigation.NavigationType
 import io.github.airdaydreamers.melddrive.ui.components.FileGrid
 import io.github.airdaydreamers.melddrive.ui.components.FileList
 import io.github.airdaydreamers.melddrive.ui.components.FileManagerDrawerContent
+import io.github.airdaydreamers.melddrive.ui.components.FileManagerSidebar
 import io.github.airdaydreamers.melddrive.ui.components.FileManagerTopBar
+import io.github.airdaydreamers.melddrive.ui.components.PermanentDrawerContent
 import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerEffect
 import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerIntent
 import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerState
@@ -37,6 +42,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun FileManagerScreen(
     viewModel: FileManagerViewModel,
+    navigationType: NavigationType,
     onOpenFile: (FileManagerEffect.OpenFileExternally) -> Unit,
     onShowToast: (String) -> Unit,
     onNavigateToAddStorage: () -> Unit,
@@ -80,14 +86,14 @@ fun FileManagerScreen(
 
     FileManagerContent(
         state = state,
+        navigationType = navigationType,
         onIntent = viewModel::onIntent,
         onDeleteServer = { serverToDelete = it },
     )
 }
 
 @Composable
-fun FileManagerContent(state: FileManagerState, onIntent: (FileManagerIntent) -> Unit, onDeleteServer: (Long) -> Unit = {}) {
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+fun FileManagerContent(state: FileManagerState, navigationType: NavigationType, onIntent: (FileManagerIntent) -> Unit, onDeleteServer: (Long) -> Unit = {}) {
     val scope = rememberCoroutineScope()
 
     val currentServerName = remember(state.currentServerId, state.sidebarItems) {
@@ -102,6 +108,50 @@ fun FileManagerContent(state: FileManagerState, onIntent: (FileManagerIntent) ->
         }
     }
 
+    when (navigationType) {
+        NavigationType.DRAWER -> {
+            DrawerLayout(
+                state = state,
+                currentServerName = currentServerName,
+                onIntent = onIntent,
+                onDeleteServer = onDeleteServer,
+                scope = scope,
+            )
+        }
+
+        NavigationType.RAIL -> {
+            RailLayout(
+                state = state,
+                currentServerName = currentServerName,
+                onIntent = onIntent,
+            )
+        }
+
+        NavigationType.PERMANENT_DRAWER -> {
+            PermanentDrawerLayout(
+                state = state,
+                currentServerName = currentServerName,
+                onIntent = onIntent,
+                onDeleteServer = onDeleteServer,
+            )
+        }
+    }
+}
+
+/**
+ * Compact layout: ModalNavigationDrawer with hamburger menu.
+ * Used on phones in portrait mode.
+ */
+@Composable
+private fun DrawerLayout(
+    state: FileManagerState,
+    currentServerName: String?,
+    onIntent: (FileManagerIntent) -> Unit,
+    onDeleteServer: (Long) -> Unit,
+    scope: kotlinx.coroutines.CoroutineScope,
+) {
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -110,7 +160,8 @@ fun FileManagerContent(state: FileManagerState, onIntent: (FileManagerIntent) ->
                 currentPath = state.currentPath,
                 onDeleteServer = onDeleteServer,
                 onItemClick = { item ->
-                    handleDrawerItemClick(item, onIntent, scope, drawerState)
+                    handleSidebarItemClick(item, onIntent)
+                    scope.launch { drawerState.close() }
                 },
             )
         },
@@ -124,12 +175,54 @@ fun FileManagerContent(state: FileManagerState, onIntent: (FileManagerIntent) ->
     }
 }
 
-private fun handleDrawerItemClick(
-    item: io.github.airdaydreamers.melddrive.data.model.SidebarItem,
-    onIntent: (FileManagerIntent) -> Unit,
-    scope: kotlinx.coroutines.CoroutineScope,
-    drawerState: androidx.compose.material3.DrawerState,
-) {
+/**
+ * Medium layout: NavigationRail alongside content.
+ * Used on foldable devices and phones in landscape.
+ */
+@Composable
+private fun RailLayout(state: FileManagerState, currentServerName: String?, onIntent: (FileManagerIntent) -> Unit) {
+    Row(modifier = Modifier.fillMaxSize()) {
+        FileManagerSidebar(
+            items = state.sidebarItems,
+            currentPath = state.currentPath,
+            onItemClick = { item -> handleSidebarItemClick(item, onIntent) },
+        )
+        FileManagerMainScaffold(
+            state = state,
+            currentServerName = currentServerName,
+            onIntent = onIntent,
+            onMenuClick = null,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+/**
+ * Expanded layout: PermanentNavigationDrawer with full drawer always visible.
+ * Used on tablets and desktop.
+ */
+@Composable
+private fun PermanentDrawerLayout(state: FileManagerState, currentServerName: String?, onIntent: (FileManagerIntent) -> Unit, onDeleteServer: (Long) -> Unit) {
+    PermanentNavigationDrawer(
+        drawerContent = {
+            PermanentDrawerContent(
+                items = state.sidebarItems,
+                currentPath = state.currentPath,
+                onDeleteServer = onDeleteServer,
+                onItemClick = { item -> handleSidebarItemClick(item, onIntent) },
+            )
+        },
+    ) {
+        FileManagerMainScaffold(
+            state = state,
+            currentServerName = currentServerName,
+            onIntent = onIntent,
+            onMenuClick = null,
+        )
+    }
+}
+
+private fun handleSidebarItemClick(item: io.github.airdaydreamers.melddrive.data.model.SidebarItem, onIntent: (FileManagerIntent) -> Unit) {
     if (item.type == SidebarItemType.ADD_STORAGE) {
         onIntent(FileManagerIntent.NavigateToAddStorage)
     } else {
@@ -139,12 +232,18 @@ private fun handleDrawerItemClick(
         }
         item.path?.let { onIntent(FileManagerIntent.NavigateTo(it, storageType, item.serverId)) }
     }
-    scope.launch { drawerState.close() }
 }
 
 @Composable
-private fun FileManagerMainScaffold(state: FileManagerState, currentServerName: String?, onIntent: (FileManagerIntent) -> Unit, onMenuClick: () -> Unit) {
+private fun FileManagerMainScaffold(
+    state: FileManagerState,
+    currentServerName: String?,
+    onIntent: (FileManagerIntent) -> Unit,
+    onMenuClick: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
     Scaffold(
+        modifier = modifier,
         topBar = {
             FileManagerTopBar(
                 currentPath = state.currentPath,
