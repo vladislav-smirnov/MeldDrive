@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.HorizontalDivider
@@ -20,6 +22,7 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.PermanentDrawerSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -59,6 +62,29 @@ fun FileManagerSidebar(items: List<SidebarItem>, currentPath: String, onItemClic
 @Composable
 fun FileManagerDrawerContent(items: List<SidebarItem>, currentPath: String, onItemClick: (SidebarItem) -> Unit, onDeleteServer: (Long) -> Unit = {}) {
     ModalDrawerSheet {
+        DrawerContentBody(items, currentPath, onItemClick, onDeleteServer)
+    }
+}
+
+/**
+ * Permanent drawer variant for expanded screens (tablets, desktop).
+ * Uses [PermanentDrawerSheet] which is always visible and not dismissible.
+ */
+@Composable
+fun PermanentDrawerContent(items: List<SidebarItem>, currentPath: String, onItemClick: (SidebarItem) -> Unit, onDeleteServer: (Long) -> Unit = {}) {
+    PermanentDrawerSheet {
+        DrawerContentBody(items, currentPath, onItemClick, onDeleteServer)
+    }
+}
+
+/**
+ * Shared drawer body content used by both [FileManagerDrawerContent] and [PermanentDrawerContent].
+ */
+@Composable
+private fun DrawerContentBody(items: List<SidebarItem>, currentPath: String, onItemClick: (SidebarItem) -> Unit, onDeleteServer: (Long) -> Unit) {
+    val scrollState = rememberScrollState()
+
+    Column(modifier = Modifier.verticalScroll(scrollState)) {
         Spacer(Modifier.height(12.dp))
         Text(
             "File Manager",

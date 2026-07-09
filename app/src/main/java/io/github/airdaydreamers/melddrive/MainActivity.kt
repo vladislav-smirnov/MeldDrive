@@ -13,6 +13,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.ui.Modifier
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
@@ -28,6 +30,7 @@ import io.github.airdaydreamers.melddrive.data.repository.ServerRepository
 import io.github.airdaydreamers.melddrive.data.security.CredentialStorage
 import io.github.airdaydreamers.melddrive.data.security.SecurityManager
 import io.github.airdaydreamers.melddrive.data.storage.FileStreamProvider
+import io.github.airdaydreamers.melddrive.ui.components.AdaptiveNavigation.calculateNavigationType
 import io.github.airdaydreamers.melddrive.ui.screens.AddStorageScreen
 import io.github.airdaydreamers.melddrive.ui.screens.FileManagerScreen
 import io.github.airdaydreamers.melddrive.ui.screens.SettingsScreen
@@ -38,6 +41,7 @@ import io.github.airdaydreamers.melddrive.ui.viewmodel.ViewModelFactory
 import java.io.File
 
 class MainActivity : ComponentActivity() {
+    @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -53,6 +57,9 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MeldDriveTheme {
+                val windowSizeClass = calculateWindowSizeClass(this)
+                val navigationType = calculateNavigationType(windowSizeClass.widthSizeClass)
+
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,
@@ -64,6 +71,7 @@ class MainActivity : ComponentActivity() {
                             val viewModel: FileManagerViewModel = viewModel(factory = viewModelFactory)
                             FileManagerScreen(
                                 viewModel = viewModel,
+                                navigationType = navigationType,
                                 onOpenFile = { effect ->
                                     openFile(effect.fileItem, effect.serverId)
                                 },
@@ -118,12 +126,12 @@ class MainActivity : ComponentActivity() {
 
         try {
             startActivity(intent)
-        } catch (ignored: ActivityNotFoundException) {
+        } catch (_: ActivityNotFoundException) {
             Toast.makeText(this, "No app found to open this file type", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun getMimeType(fileName: String): String? {
+    private fun getMimeType(fileName: String): String {
         val extension = fileName.substringAfterLast(".", "")
         return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension) ?: "*/*"
     }

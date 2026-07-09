@@ -51,7 +51,7 @@ fun FileManagerTopBar(
     isGridView: Boolean,
     searchQuery: String,
     isSearchActive: Boolean,
-    onMenuClick: () -> Unit,
+    onMenuClick: (() -> Unit)?,
     onNavigateTo: (String) -> Unit,
     onToggleViewMode: (Boolean) -> Unit,
     onSearchQueryChange: (String) -> Unit,
@@ -100,7 +100,7 @@ fun DefaultTopBar(
     storageType: StorageType,
     serverName: String?,
     isGridView: Boolean,
-    onMenuClick: () -> Unit,
+    onMenuClick: (() -> Unit)?,
     onNavigateTo: (String) -> Unit,
     onToggleViewMode: (Boolean) -> Unit,
     onSearchClick: () -> Unit,
@@ -108,8 +108,10 @@ fun DefaultTopBar(
 ) {
     TopAppBar(
         navigationIcon = {
-            IconButton(onClick = onMenuClick) {
-                Icon(Icons.Default.Menu, contentDescription = "Menu")
+            if (onMenuClick != null) {
+                IconButton(onClick = onMenuClick) {
+                    Icon(Icons.Default.Menu, contentDescription = "Menu")
+                }
             }
         },
         title = {
