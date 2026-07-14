@@ -30,9 +30,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.airdaydreamers.melddrive.R
 import io.github.airdaydreamers.melddrive.ui.mvi.SettingsIntent
 import io.github.airdaydreamers.melddrive.ui.mvi.SettingsState
 import io.github.airdaydreamers.melddrive.ui.viewmodel.SettingsViewModel
@@ -57,10 +59,10 @@ fun SettingsContent(state: SettingsState, onIntent: (SettingsIntent) -> Unit, on
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.content_desc_back))
                     }
                 },
             )
@@ -99,11 +101,11 @@ fun BufferingToggleSection(bufferingEnabled: Boolean, onCheckedChange: (Boolean)
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "Enable SMB Buffering",
+                text = stringResource(R.string.settings_enable_buffering_title, stringResource(R.string.untranslatable_smb)),
                 style = MaterialTheme.typography.titleMedium,
             )
             Text(
-                text = "Prefetch next chunks in parallel when playing/reading SMB files",
+                text = stringResource(R.string.settings_enable_buffering_summary, stringResource(R.string.untranslatable_smb)),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -133,12 +135,12 @@ fun BufferSizeSection(bufferingEnabled: Boolean, bufferSizeMb: Int, onValueChang
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "Buffer Size: $bufferSizeMb MB",
+                    text = stringResource(R.string.settings_buffer_size_title, bufferSizeMb, stringResource(R.string.untranslatable_mb)),
                     style = MaterialTheme.typography.titleMedium,
                 )
 
                 Text(
-                    text = "Larger buffers improve stability but use more memory.",
+                    text = stringResource(R.string.settings_buffer_size_summary),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -155,8 +157,14 @@ fun BufferSizeSection(bufferingEnabled: Boolean, bufferSizeMb: Int, onValueChang
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Text("${MIN_BUFFER_MB.toInt()} MB", style = MaterialTheme.typography.bodySmall)
-                    Text("${MAX_BUFFER_MB.toInt()} MB", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        stringResource(R.string.mb_format, MIN_BUFFER_MB.toInt(), stringResource(R.string.untranslatable_mb)),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Text(
+                        stringResource(R.string.mb_format, MAX_BUFFER_MB.toInt(), stringResource(R.string.untranslatable_mb)),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
                 }
             }
         }

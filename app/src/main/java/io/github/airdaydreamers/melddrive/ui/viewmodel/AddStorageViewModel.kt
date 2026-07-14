@@ -1,8 +1,11 @@
 package io.github.airdaydreamers.melddrive.ui.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import io.github.airdaydreamers.melddrive.R
 import io.github.airdaydreamers.melddrive.data.db.RemoteServer
 import io.github.airdaydreamers.melddrive.data.model.StorageException
 import io.github.airdaydreamers.melddrive.data.repository.ServerRepository
@@ -19,7 +22,7 @@ import java.io.IOException
 import javax.inject.Inject
 
 @HiltViewModel
-class AddStorageViewModel @Inject constructor(private val serverRepository: ServerRepository) : ViewModel() {
+class AddStorageViewModel @Inject constructor(private val serverRepository: ServerRepository, @ApplicationContext private val context: Context) : ViewModel() {
     private val _state = MutableStateFlow(AddStorageState())
     val state = _state.asStateFlow()
 
@@ -41,7 +44,7 @@ class AddStorageViewModel @Inject constructor(private val serverRepository: Serv
     private fun saveServer() {
         val s = _state.value
         if (s.host.isBlank() || s.displayName.isBlank()) {
-            _state.update { it.copy(error = "Host and Display Name are mandatory") }
+            _state.update { it.copy(error = context.getString(R.string.error_host_display_mandatory)) }
             return
         }
 

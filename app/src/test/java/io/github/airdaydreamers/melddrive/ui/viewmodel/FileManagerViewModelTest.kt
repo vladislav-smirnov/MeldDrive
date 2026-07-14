@@ -1,7 +1,9 @@
 package io.github.airdaydreamers.melddrive.ui.viewmodel
 
+import android.content.Context
 import android.os.Environment
 import app.cash.turbine.test
+import io.github.airdaydreamers.melddrive.R
 import io.github.airdaydreamers.melddrive.data.db.RemoteServer
 import io.github.airdaydreamers.melddrive.data.model.FileItem
 import io.github.airdaydreamers.melddrive.data.model.StorageType
@@ -39,6 +41,7 @@ class FileManagerViewModelTest {
     private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var fileRepository: FileRepository
     private lateinit var serverRepository: ServerRepository
+    private lateinit var mockContext: Context
     private lateinit var viewModel: FileManagerViewModel
 
     private val serversFlow = MutableStateFlow<List<RemoteServer>>(emptyList())
@@ -49,6 +52,11 @@ class FileManagerViewModelTest {
 
         fileRepository = mockk(relaxed = true)
         serverRepository = mockk(relaxed = true)
+        mockContext = mockk(relaxed = true)
+
+        every { mockContext.getString(R.string.toast_server_removed) } returns "Server removed"
+        every { mockContext.getString(R.string.search_error, any()) } answers { "Search error: ${args[1]}" }
+        every { mockContext.getString(R.string.toast_error, any()) } answers { "Error: ${args[1]}" }
 
         // Android SDK stubs contain null for DIRECTORY constants.
         // We set them via reflection to avoid NullPointerException in File(parent, child) constructor.
@@ -72,7 +80,7 @@ class FileManagerViewModelTest {
         every { serverRepository.getRemoteServers() } returns serversFlow
 
         // Initialize viewModel
-        viewModel = FileManagerViewModel(fileRepository, serverRepository)
+        viewModel = FileManagerViewModel(fileRepository, serverRepository, mockContext)
     }
 
     @AfterEach
