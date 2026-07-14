@@ -7,6 +7,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
@@ -18,31 +19,36 @@ class LocalFileSystemHandler : StorageSource {
     override suspend fun listFiles(path: String): List<FileItem> = withContext(Dispatchers.IO) {
         val nioPath = Paths.get(path)
         if (nioPath.isDirectory()) {
-            nioPath.listDirectoryEntries().map {
-                FileItem(
-                    path = it.toString(),
-                    name = it.name,
-                    isDirectory = it.isDirectory(),
-                    size = if (it.isDirectory()) {
-                        0
-                    } else {
-                        try {
-                            Files.size(it)
-                        } catch (ignored: IOException) {
-                            0
-                        }
-                    },
-                    lastModified = try {
-                        Files.getLastModifiedTime(it).toMillis()
-                    } catch (ignored: IOException) {
-                        0
-                    },
-                    storageType = StorageType.LOCAL,
-                )
-            }.sortedWith(compareBy({ !it.isDirectory }, { it.name.lowercase() }))
+            nioPath.listDirectoryEntries().map { createFileItem(it) }
+                .sortedWith(compareBy({ !it.isDirectory }, { it.name.lowercase() }))
         } else {
             emptyList()
         }
+    }
+
+    private suspend fun createFileItem(it: Path): FileItem = withContext(Dispatchers.IO) {
+        val size = if (it.isDirectory()) {
+            DEFAULT_VALUE
+        } else {
+            try {
+                Files.size(it)
+            } catch (_: IOException) {
+                DEFAULT_VALUE
+            }
+        }
+        val lastModified = try {
+            Files.getLastModifiedTime(it).toMillis()
+        } catch (_: IOException) {
+            DEFAULT_VALUE
+        }
+        return@withContext FileItem(
+            path = it.toString(),
+            name = it.name,
+            isDirectory = it.isDirectory(),
+            size = size,
+            lastModified = lastModified,
+            storageType = StorageType.LOCAL,
+        )
     }
 
     override suspend fun deleteFile(path: String): Boolean = withContext(Dispatchers.IO) {
@@ -100,7 +106,7 @@ class LocalFileSystemHandler : StorageSource {
                         path = file.absolutePath,
                         name = file.name,
                         isDirectory = file.isDirectory,
-                        size = if (file.isDirectory) 0 else file.length(),
+                        size = if (file.isDirectory) DEFAULT_VALUE else file.length(),
                         lastModified = file.lastModified(),
                         storageType = StorageType.LOCAL,
                     ),
@@ -108,5 +114,9 @@ class LocalFileSystemHandler : StorageSource {
             }
         }
         result
+    }
+
+    companion object {
+        private const val DEFAULT_VALUE = 0L
     }
 }

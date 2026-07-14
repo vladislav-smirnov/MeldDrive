@@ -4,7 +4,6 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Bundle
 import android.os.Environment
-import android.provider.Settings
 import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -15,33 +14,34 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.saveable.rememberSerializable
 import androidx.compose.ui.Modifier
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import io.github.airdaydreamers.melddrive.data.db.AppDatabase
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.runtime.serialization.NavBackStackSerializer
+import androidx.navigation3.ui.NavDisplay
+import dagger.hilt.android.AndroidEntryPoint
 import io.github.airdaydreamers.melddrive.data.model.FileItem
 import io.github.airdaydreamers.melddrive.data.model.StorageType
-import io.github.airdaydreamers.melddrive.data.repository.FileRepository
-import io.github.airdaydreamers.melddrive.data.repository.ServerRepository
-import io.github.airdaydreamers.melddrive.data.security.CredentialStorage
-import io.github.airdaydreamers.melddrive.data.security.SecurityManager
 import io.github.airdaydreamers.melddrive.data.storage.FileStreamProvider
-import io.github.airdaydreamers.melddrive.data.storage.SettingsManager
 import io.github.airdaydreamers.melddrive.ui.components.AdaptiveNavigation.calculateNavigationType
+import io.github.airdaydreamers.melddrive.ui.navigation.AddStorage
+import io.github.airdaydreamers.melddrive.ui.navigation.FileManager
+import io.github.airdaydreamers.melddrive.ui.navigation.MeldDriveKey
 import io.github.airdaydreamers.melddrive.ui.screens.AddStorageScreen
 import io.github.airdaydreamers.melddrive.ui.screens.FileManagerScreen
 import io.github.airdaydreamers.melddrive.ui.screens.SettingsScreen
 import io.github.airdaydreamers.melddrive.ui.theme.MeldDriveTheme
-import io.github.airdaydreamers.melddrive.ui.viewmodel.AddStorageViewModel
-import io.github.airdaydreamers.melddrive.ui.viewmodel.FileManagerViewModel
-import io.github.airdaydreamers.melddrive.ui.viewmodel.SettingsViewModel
-import io.github.airdaydreamers.melddrive.ui.viewmodel.ViewModelFactory
 import java.io.File
+import android.provider.Settings as AndroidSettings
+import io.github.airdaydreamers.melddrive.ui.navigation.Settings as MeldDriveSettings
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,14 +49,6 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         checkPermissions()
-
-        val database = AppDatabase.getDatabase(this)
-        val securityManager = SecurityManager(this)
-        val credentialStorage = CredentialStorage(this, securityManager)
-        val serverRepository = ServerRepository(database.remoteServerDao(), credentialStorage)
-        val repository = FileRepository(database.remoteServerDao(), credentialStorage)
-        val settingsManager = SettingsManager(this)
-        val viewModelFactory = ViewModelFactory(repository, serverRepository, settingsManager)
 
         setContent {
             MeldDriveTheme {
@@ -67,35 +59,40 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,
                 ) {
-                    val navController = rememberNavController()
+                    val backStack = rememberMeldDriveNavBackStack(FileManager)
 
-                    NavHost(navController = navController, startDestination = "file_manager") {
-                        composable("file_manager") {
-                            val viewModel: FileManagerViewModel = viewModel(factory = viewModelFactory)
+                    val entryProvider = entryProvider<MeldDriveKey> {
+                        entry<FileManager> {
                             FileManagerScreen(
-                                viewModel = viewModel,
                                 navigationType = navigationType,
                                 onOpenFile = { effect ->
                                     openFile(effect.fileItem, effect.serverId)
                                 },
                                 onShowToast = { Toast.makeText(this@MainActivity, it, Toast.LENGTH_SHORT).show() },
-                                onNavigateToAddStorage = { navController.navigate("add_storage") },
-                                onNavigateToSettings = { navController.navigate("settings") },
+                                onNavigateToAddStorage = { backStack.add(AddStorage) },
+                                onNavigateToSettings = { backStack.add(MeldDriveSettings) },
                             )
                         }
-                        composable("add_storage") {
-                            val viewModel: AddStorageViewModel = viewModel(factory = viewModelFactory)
+                        entry<AddStorage> {
                             AddStorageScreen(
-                                viewModel = viewModel,
-                                onBack = { navController.popBackStack() },
-                                onSuccess = { navController.popBackStack() },
+                                onBack = { backStack.removeLastOrNull() },
+                                onSuccess = { backStack.removeLastOrNull() },
                             )
                         }
-                        composable("settings") {
-                            val viewModel: SettingsViewModel = viewModel(factory = viewModelFactory)
-                            SettingsScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
+                        entry<MeldDriveSettings> {
+                            SettingsScreen(onBack = { backStack.removeLastOrNull() })
                         }
                     }
+
+                    NavDisplay(
+                        backStack = backStack,
+                        entryProvider = entryProvider,
+                        entryDecorators = listOf(
+                            rememberSaveableStateHolderNavEntryDecorator<MeldDriveKey>(),
+                            rememberViewModelStoreNavEntryDecorator<MeldDriveKey>(),
+                        ),
+                        onBack = { backStack.removeLastOrNull() },
+                    )
                 }
             }
         }
@@ -103,7 +100,7 @@ class MainActivity : ComponentActivity() {
 
     private fun checkPermissions() {
         if (!Environment.isExternalStorageManager()) {
-            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+            val intent = Intent(AndroidSettings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
             intent.data = "package:${applicationContext.packageName}".toUri()
             startActivity(intent)
         }
@@ -143,3 +140,9 @@ class MainActivity : ComponentActivity() {
     private val applicationId: String
         get() = packageName
 }
+
+@Composable
+fun rememberMeldDriveNavBackStack(vararg elements: MeldDriveKey): NavBackStack<MeldDriveKey> =
+    rememberSerializable(serializer = NavBackStackSerializer<MeldDriveKey>()) {
+        NavBackStack(*elements)
+    }

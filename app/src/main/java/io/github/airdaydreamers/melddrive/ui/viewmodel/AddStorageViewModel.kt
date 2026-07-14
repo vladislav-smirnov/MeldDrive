@@ -2,6 +2,7 @@ package io.github.airdaydreamers.melddrive.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.airdaydreamers.melddrive.data.db.RemoteServer
 import io.github.airdaydreamers.melddrive.data.model.StorageException
 import io.github.airdaydreamers.melddrive.data.repository.ServerRepository
@@ -15,8 +16,10 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.IOException
+import javax.inject.Inject
 
-class AddStorageViewModel(private val serverRepository: ServerRepository) : ViewModel() {
+@HiltViewModel
+class AddStorageViewModel @Inject constructor(private val serverRepository: ServerRepository) : ViewModel() {
     private val _state = MutableStateFlow(AddStorageState())
     val state = _state.asStateFlow()
 

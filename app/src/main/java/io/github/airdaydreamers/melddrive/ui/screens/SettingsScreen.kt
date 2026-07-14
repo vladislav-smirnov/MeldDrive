@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.airdaydreamers.melddrive.ui.mvi.SettingsIntent
 import io.github.airdaydreamers.melddrive.ui.mvi.SettingsState
@@ -38,7 +39,7 @@ private const val MAX_BUFFER_MB = 128f
 private const val BUFFER_STEPS = 14
 
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit) {
+fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     SettingsContent(
         state = state,

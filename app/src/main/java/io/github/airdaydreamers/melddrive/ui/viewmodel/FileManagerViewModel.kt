@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material.icons.filled.Storage
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.airdaydreamers.melddrive.data.model.SidebarItem
 import io.github.airdaydreamers.melddrive.data.model.SidebarItemType
 import io.github.airdaydreamers.melddrive.data.model.StorageException
@@ -32,8 +33,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.IOException
+import javax.inject.Inject
 
-class FileManagerViewModel(private val repository: FileRepository, private val serverRepository: ServerRepository) : ViewModel() {
+@HiltViewModel
+class FileManagerViewModel @Inject constructor(private val repository: FileRepository, private val serverRepository: ServerRepository) : ViewModel() {
 
     private val _state = MutableStateFlow(FileManagerState(currentPath = Environment.getExternalStorageDirectory().absolutePath))
     val state: StateFlow<FileManagerState> = _state.asStateFlow()
