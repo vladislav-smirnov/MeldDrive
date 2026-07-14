@@ -10,19 +10,33 @@ plugins {
 }
 
 // Counts total commits (e.g., 145)
-fun getGitVersionCode(): Int = providers.exec {
-    commandLine("git", "rev-list", "--count", "HEAD")
-    workingDir(rootDir)
-    isIgnoreExitValue = true
-}.standardOutput.asText.map { it.trim().toIntOrNull() ?: 1 }.get()
+fun getGitVersionCode(): Int {
+    if (project.hasProperty("versionCode")) {
+        return project.property("versionCode").toString().toInt()
+    }
+    return providers.exec {
+        commandLine("git", "rev-list", "--count", "HEAD")
+        workingDir(rootDir)
+        isIgnoreExitValue = true
+    }.standardOutput.asText.map { it.trim().toIntOrNull() ?: 1 }.get()
+}
 
 // Gets the latest tag (e.g., "1.0.4"), or commit hash if no tag exists
 // follow https://semver.org/
-fun getGitVersionName(): String = providers.exec {
-    commandLine("git", "describe", "--tags", "--always")
-    workingDir(rootDir)
-    isIgnoreExitValue = true
-}.standardOutput.asText.map { it.trim().ifEmpty { "1.0.0-dev" } }.get()
+fun getGitVersionName(): String {
+    if (project.hasProperty("versionName")) {
+        return project.property("versionName").toString()
+    }
+    return providers.exec {
+        commandLine("git", "describe", "--tags", "--always")
+        workingDir(rootDir)
+        isIgnoreExitValue = true
+    }.standardOutput.asText.map {
+        it.trim()
+            .removePrefix("v")
+            .ifEmpty { "1.0.0-dev" }
+    }.get()
+}
 
 android {
     namespace = "io.github.airdaydreamers.melddrive"
@@ -73,6 +87,17 @@ android {
             it.useJUnitPlatform()
             it.jvmArgs("-Xshare:off")
         }
+    }
+}
+
+tasks.register("printVersion") {
+    group = "help"
+    description = "Prints the version code and version name of the application"
+    val vCode = android.defaultConfig.versionCode
+    val vName = android.defaultConfig.versionName
+    doLast {
+        println("Version Code: $vCode")
+        println("Version Name: $vName")
     }
 }
 
