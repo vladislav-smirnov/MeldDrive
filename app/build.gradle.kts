@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.detekt)
     alias(libs.plugins.spotless)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.kover)
 }
 
 android {
@@ -14,11 +15,11 @@ android {
 
     defaultConfig {
         applicationId = "io.github.airdaydreamers.melddrive"
-        minSdk = 33
+        minSdk = 31
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "io.github.airdaydreamers.melddrive.HiltTestRunner"
     }
 
     signingConfigs {
@@ -111,6 +112,26 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.hilt.android.testing)
+    kspAndroidTest(libs.hilt.android.compiler)
+    androidTestImplementation(libs.mockk.android)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+}
+
+// KoverReport configuration for code coverage
+kover {
+    reports {
+        total {
+            html {
+                onCheck = true
+            }
+            verify {
+                onCheck = false // Only check coverage in CI, not locally
+                rule {
+                    minBound(30) // 30% minimum code coverage threshold but the goal is 60%
+                }
+            }
+        }
+    }
 }

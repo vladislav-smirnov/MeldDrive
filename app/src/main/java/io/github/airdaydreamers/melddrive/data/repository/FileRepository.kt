@@ -15,7 +15,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class FileRepository @Inject constructor(
+open class FileRepository @Inject constructor(
     private val remoteServerDao: RemoteServerDao,
     private val credentialStorage: CredentialStorage,
     private val localHandler: LocalFileSystemHandler,
@@ -58,7 +58,8 @@ class FileRepository @Inject constructor(
         }
     }
 
-    suspend fun listFiles(path: String, storageType: StorageType, serverId: Long? = null): List<FileItem> = getHandler(storageType, serverId).listFiles(path)
+    open suspend fun listFiles(path: String, storageType: StorageType, serverId: Long? = null): List<FileItem> =
+        getHandler(storageType, serverId).listFiles(path)
 
     suspend fun deleteFile(path: String, storageType: StorageType, serverId: Long?) {
         getHandler(storageType, serverId).deleteFile(path)

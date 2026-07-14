@@ -38,7 +38,13 @@ import javax.inject.Inject
 @HiltViewModel
 class FileManagerViewModel @Inject constructor(private val repository: FileRepository, private val serverRepository: ServerRepository) : ViewModel() {
 
-    private val _state = MutableStateFlow(FileManagerState(currentPath = Environment.getExternalStorageDirectory().absolutePath))
+    private val _state = MutableStateFlow(
+        FileManagerState(
+            currentPath =
+                System.getProperty("test.local.root")
+                    ?: Environment.getExternalStorageDirectory().absolutePath,
+        ),
+    )
     val state: StateFlow<FileManagerState> = _state.asStateFlow()
 
     private val _effect = Channel<FileManagerEffect>()
@@ -156,7 +162,13 @@ class FileManagerViewModel @Inject constructor(private val repository: FileRepos
                     serverRepository.deleteRemoteServer(server)
                     repository.clearHandler(serverId)
                     if (_state.value.currentServerId == serverId) {
-                        onIntent(FileManagerIntent.NavigateTo(Environment.getExternalStorageDirectory().absolutePath, StorageType.LOCAL))
+                        onIntent(
+                            FileManagerIntent.NavigateTo(
+                                System.getProperty("test.local.root")
+                                    ?: Environment.getExternalStorageDirectory().absolutePath,
+                                StorageType.LOCAL,
+                            ),
+                        )
                     }
                     _effect.send(FileManagerEffect.ShowToast("Server removed"))
                 }
@@ -233,7 +245,7 @@ class FileManagerViewModel @Inject constructor(private val repository: FileRepos
 }
 
 fun getSidebarItems(remoteServers: List<io.github.airdaydreamers.melddrive.data.db.RemoteServer>): List<SidebarItem> {
-    val root = Environment.getExternalStorageDirectory().absolutePath
+    val root = System.getProperty("test.local.root") ?: Environment.getExternalStorageDirectory().absolutePath
     val items = mutableListOf(
         SidebarItem("home", "Home", root, SidebarItemType.SYSTEM_FOLDER, Icons.Default.Home),
         SidebarItem("downloads", "Downloads", File(root, Environment.DIRECTORY_DOWNLOADS).absolutePath, SidebarItemType.SYSTEM_FOLDER, Icons.Default.Download),

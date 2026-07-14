@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import io.github.airdaydreamers.melddrive.data.model.StorageType
 
@@ -123,7 +124,7 @@ fun DefaultTopBar(
             )
         },
         actions = {
-            IconButton(onClick = onSearchClick) {
+            IconButton(onClick = onSearchClick, modifier = Modifier.testTag("search_button")) {
                 Icon(Icons.Default.Search, contentDescription = "Search")
             }
             IconButton(onClick = { onToggleViewMode(!isGridView) }) {
@@ -132,7 +133,7 @@ fun DefaultTopBar(
                     contentDescription = "Toggle View",
                 )
             }
-            IconButton(onClick = onSettingsClick) {
+            IconButton(onClick = onSettingsClick, modifier = Modifier.testTag("settings_button")) {
                 Icon(Icons.Default.Settings, contentDescription = "Settings")
             }
         },
@@ -150,7 +151,7 @@ fun SearchTopBar(searchQuery: String, onSearchQueryChange: (String) -> Unit, onC
 
     TopAppBar(
         navigationIcon = {
-            IconButton(onClick = onCloseSearch) {
+            IconButton(onClick = onCloseSearch, modifier = Modifier.testTag("search_close_button")) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
             }
         },
@@ -160,7 +161,8 @@ fun SearchTopBar(searchQuery: String, onSearchQueryChange: (String) -> Unit, onC
                 onValueChange = onSearchQueryChange,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .focusRequester(focusRequester),
+                    .focusRequester(focusRequester)
+                    .testTag("search_input"),
                 placeholder = { Text("Search files...") },
                 singleLine = true,
                 colors = TextFieldDefaults.colors(
@@ -222,7 +224,7 @@ private fun getBreadcrumbItems(currentPath: String, storageType: StorageType, se
 
 private fun getLocalBreadcrumbs(currentPath: String): List<Pair<String, String>> {
     val items = mutableListOf<Pair<String, String>>()
-    val rootPath = try {
+    val rootPath = System.getProperty("test.local.root") ?: try {
         Environment.getExternalStorageDirectory().absolutePath
     } catch (_: Exception) {
         // Fallback for preview mode or when system services are unavailable
