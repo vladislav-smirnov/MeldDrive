@@ -26,7 +26,7 @@ class SecurityManagerTest {
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
         try {
-            securityManager = SecurityManager(context)
+            securityManager = TinkSecurityManager(context)
         } catch (e: Exception) {
             // Under some headless environments, Android Keystore initialization might fail.
             // We log this and handle it gracefully in the tests.

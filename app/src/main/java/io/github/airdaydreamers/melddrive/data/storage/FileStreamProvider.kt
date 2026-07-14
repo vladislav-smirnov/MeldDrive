@@ -28,16 +28,12 @@ class FileStreamProvider : ContentProvider() {
         fun settingsManager(): SettingsManager
     }
 
-    private lateinit var repository: FileRepository
-    private lateinit var settingsManager: SettingsManager
+    private lateinit var fileRepository: FileRepository
+    private lateinit var fileSettingsManager: SettingsManager
     private lateinit var handlerThread: HandlerThread
     private lateinit var handler: Handler
 
     override fun onCreate(): Boolean {
-        val context = context ?: return false
-        val entryPoint = EntryPointAccessors.fromApplication(context, FileStreamProviderEntryPoint::class.java)
-        repository = entryPoint.fileRepository()
-        settingsManager = entryPoint.settingsManager()
         handlerThread = HandlerThread("FileStreamProviderThread")
         handlerThread.start()
         handler = Handler(handlerThread.looper)
@@ -58,6 +54,13 @@ class FileStreamProvider : ContentProvider() {
     override fun update(uri: Uri, values: ContentValues?, selection: String?, selectionArgs: Array<out String>?): Int = 0
 
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor? {
+        if (!::fileRepository.isInitialized) {
+            val ctx = context?.applicationContext ?: throw FileNotFoundException("Context not available")
+            val entryPoint = EntryPointAccessors.fromApplication(ctx, FileStreamProviderEntryPoint::class.java)
+            fileRepository = entryPoint.fileRepository()
+            fileSettingsManager = entryPoint.settingsManager()
+        }
+
         val segments = uri.pathSegments
         if (segments.size < MIN_URI_SEGMENTS) throw FileNotFoundException("Invalid URI: $uri")
 
@@ -65,11 +68,11 @@ class FileStreamProvider : ContentProvider() {
         val serverId = segments[1].toLong().let { if (it == -1L) null else it }
         val filePath = segments.subList(2, segments.size).joinToString("/")
 
-        val bufferingEnabled = runBlocking { settingsManager.bufferingEnabled.first() }
-        val bufferSizeMb = runBlocking { settingsManager.bufferSizeMb.first() }
+        val bufferingEnabled = runBlocking { fileSettingsManager.bufferingEnabled.first() }
+        val bufferSizeMb = runBlocking { fileSettingsManager.bufferSizeMb.first() }
 
         val fileSize = runBlocking {
-            repository.getFileSize(filePath, storageType, serverId)
+            fileRepository.getFileSize(filePath, storageType, serverId)
         }
 
         val storageManager = context?.getSystemService(StorageManager::class.java)
@@ -79,7 +82,7 @@ class FileStreamProvider : ContentProvider() {
             storageManager.openProxyFileDescriptor(
                 ParcelFileDescriptor.parseMode(mode),
                 FileStreamCallback(
-                    repository = repository,
+                    repository = fileRepository,
                     path = filePath,
                     storageType = storageType,
                     serverId = serverId,

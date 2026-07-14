@@ -30,6 +30,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -106,27 +107,28 @@ private fun AddStorageFields(state: AddStorageState, onIntent: (AddStorageIntent
         value = state.displayName,
         onValueChange = { onIntent(AddStorageIntent.DisplayNameChange(it)) },
         label = { Text("Display Name (e.g. Home NAS)") },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("display_name_input"),
     )
 
     OutlinedTextField(
         value = state.host,
         onValueChange = { onIntent(AddStorageIntent.HostChange(it)) },
         label = { Text("Host Address (IP or hostname)") },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("host_input"),
     )
 
     OutlinedTextField(
         value = state.port,
         onValueChange = { onIntent(AddStorageIntent.PortChange(it)) },
         label = { Text("Port (default 445)") },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("port_input"),
     )
 
     Row(verticalAlignment = Alignment.CenterVertically) {
         Checkbox(
             checked = state.isAnonymous,
             onCheckedChange = { onIntent(AddStorageIntent.AnonymousChange(it)) },
+            modifier = Modifier.testTag("anonymous_checkbox"),
         )
         Text("Anonymous Access")
     }
@@ -136,14 +138,14 @@ private fun AddStorageFields(state: AddStorageState, onIntent: (AddStorageIntent
             value = state.username,
             onValueChange = { onIntent(AddStorageIntent.UsernameChange(it)) },
             label = { Text("Username") },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().testTag("username_input"),
         )
 
         OutlinedTextField(
             value = state.password,
             onValueChange = { onIntent(AddStorageIntent.PasswordChange(it)) },
             label = { Text("Password") },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().testTag("password_input"),
         )
     }
 }
@@ -152,7 +154,7 @@ private fun AddStorageFields(state: AddStorageState, onIntent: (AddStorageIntent
 private fun ColumnScope.AddStorageButtons(state: AddStorageState, onIntent: (AddStorageIntent) -> Unit) {
     Button(
         onClick = { onIntent(AddStorageIntent.SaveServer) },
-        modifier = Modifier.align(Alignment.End),
+        modifier = Modifier.align(Alignment.End).testTag("connect_save_button"),
         enabled = !state.isLoading,
     ) {
         if (state.isLoading) {

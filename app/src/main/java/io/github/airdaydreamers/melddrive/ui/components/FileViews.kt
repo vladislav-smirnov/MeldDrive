@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import io.github.airdaydreamers.melddrive.data.model.FileItem
 
@@ -60,7 +61,8 @@ fun FileListItem(file: FileItem, isSelected: Boolean, onClick: () -> Unit, onLon
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick,
-            ),
+            )
+            .testTag("file_item_${file.name}"),
     ) {
         Row(
             modifier = Modifier
@@ -112,7 +114,8 @@ fun FileGridItem(file: FileItem, isSelected: Boolean, onClick: () -> Unit, onLon
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick,
-            ),
+            )
+            .testTag("file_item_${file.name}"),
     ) {
         Column(
             modifier = Modifier

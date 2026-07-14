@@ -61,7 +61,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val backStack = rememberMeldDriveNavBackStack(FileManager)
 
-                    val entryProvider = entryProvider<MeldDriveKey> {
+                    val entryProvider = entryProvider {
                         entry<FileManager> {
                             FileManagerScreen(
                                 navigationType = navigationType,
@@ -88,8 +88,8 @@ class MainActivity : ComponentActivity() {
                         backStack = backStack,
                         entryProvider = entryProvider,
                         entryDecorators = listOf(
-                            rememberSaveableStateHolderNavEntryDecorator<MeldDriveKey>(),
-                            rememberViewModelStoreNavEntryDecorator<MeldDriveKey>(),
+                            rememberSaveableStateHolderNavEntryDecorator(),
+                            rememberViewModelStoreNavEntryDecorator(),
                         ),
                         onBack = { backStack.removeLastOrNull() },
                     )
@@ -99,6 +99,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun checkPermissions() {
+        if (System.getProperty("test.local.root") != null) return
         if (!Environment.isExternalStorageManager()) {
             val intent = Intent(AndroidSettings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
             intent.data = "package:${applicationContext.packageName}".toUri()

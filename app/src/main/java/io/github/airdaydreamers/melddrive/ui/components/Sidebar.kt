@@ -26,6 +26,7 @@ import androidx.compose.material3.PermanentDrawerSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import io.github.airdaydreamers.melddrive.data.model.SidebarItem
 import io.github.airdaydreamers.melddrive.data.model.SidebarItemType
@@ -53,6 +54,7 @@ fun FileManagerSidebar(items: List<SidebarItem>, currentPath: String, onItemClic
                     label = {
                         Text(item.title, style = MaterialTheme.typography.labelSmall)
                     },
+                    modifier = Modifier.testTag("sidebar_item_${item.title}"),
                 )
             }
         }
@@ -141,7 +143,7 @@ fun SidebarDrawerItem(item: SidebarItem, currentPath: String, onItemClick: (Side
                 if (item.type == SidebarItemType.REMOTE_SERVER && onLongClick != null) {
                     IconButton(
                         onClick = { onLongClick() },
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(24.dp).testTag("delete_server_${item.title}"),
                     ) {
                         Icon(
                             Icons.Default.Delete,
@@ -156,6 +158,6 @@ fun SidebarDrawerItem(item: SidebarItem, currentPath: String, onItemClick: (Side
         selected = isSelected,
         onClick = { onItemClick(item) },
         icon = { Icon(item.icon, contentDescription = null) },
-        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding).testTag("sidebar_item_${item.title}"),
     )
 }

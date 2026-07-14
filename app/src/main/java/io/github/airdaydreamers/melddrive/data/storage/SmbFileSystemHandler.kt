@@ -22,7 +22,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.EnumSet
 
-class SmbFileSystemHandler @AssistedInject constructor(@Assisted private val server: RemoteServer, private val client: SMBClient) : StorageSource {
+open class SmbFileSystemHandler @AssistedInject constructor(@Assisted private val server: RemoteServer, private val client: SMBClient) : StorageSource {
 
     @AssistedFactory
     interface Factory {
@@ -55,7 +55,7 @@ class SmbFileSystemHandler @AssistedInject constructor(@Assisted private val ser
         }
     }
 
-    private suspend fun listSharesFromRoot(session: Session): List<FileItem> = withContext(Dispatchers.IO) {
+    internal open suspend fun listSharesFromRoot(session: Session): List<FileItem> = withContext(Dispatchers.IO) {
         val transport: RPCTransport = SMBTransportFactories.SRVSVC.getTransport(session)
         val serverService = ServerService(transport)
         val shares: List<NetShareInfo0> = serverService.shares0
