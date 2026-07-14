@@ -9,7 +9,7 @@
     <string name="content_desc_toggle_view">ভিউ পরিবর্তন করুন</string>
     <string name="content_desc_settings">সেটিংস</string>
     <string name="content_desc_back">পিছনে</string>
-    <string name="search_placeholder">ফাইল খুঁজুন...</string>
+    <string name="search_placeholder">ফাইল খুঁজুন…</string>
     <string name="content_desc_clear">মুছে ফেলুন</string>
     <string name="internal_storage">অভ্যন্তরীণ স্টোরেজ</string>
     <string name="root">রুট</string>
@@ -45,4 +45,9 @@
     <string name="settings_buffer_size_title">বাফার সাইজ: %1$d %2$s</string>
     <string name="settings_buffer_size_summary">বড় বাফার স্থিতিশীলতা উন্নত করে কিন্তু বেশি মেমরি ব্যবহার করে।</string>
     <string name="mb_format">%1$d %2$s</string>
+
+    <string name="settings_language_title">অ্যাপের ভাষা</string>
+    <string name="settings_language_summary">অ্যাপ্লিকেশনের জন্য ভাষা চয়ন করুন</string>
+    <string name="language_select_title">ভাষা নির্বাচন করুন</string>
+    <string name="language_show_all">সব দেখান</string>
 </resources>

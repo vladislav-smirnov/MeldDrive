@@ -9,7 +9,7 @@
     <string name="content_desc_toggle_view">ನೋಟ ಬದಲಾಯಿಸಿ</string>
     <string name="content_desc_settings">ಸೆಟ್ಟಿಂಗ್‌ಗಳು</string>
     <string name="content_desc_back">ಹಿಂದಕ್ಕೆ</string>
-    <string name="search_placeholder">ಫೈಲ್‌ಗಳನ್ನು ಹುಡುಕಿ...</string>
+    <string name="search_placeholder">ಫೈಲ್‌ಗಳನ್ನು ಹುಡುಕಿ…</string>
     <string name="content_desc_clear">ತೆರವುಗೊಳಿಸಿ</string>
     <string name="internal_storage">ಆಂತರಿಕ ಸಂಗ್ರಹಣೆ</string>
     <string name="root">ರೂಟ್</string>
@@ -45,4 +45,9 @@
     <string name="settings_buffer_size_title">ಬಫರ್ ಗಾತ್ರ: %1$d %2$s</string>
     <string name="settings_buffer_size_summary">ದೊಡ್ಡ ಬಫರ್‌ಗಳು ಸ್ಥಿರತೆಯನ್ನು ಸುಧಾರಿಸುತ್ತವೆ ಆದರೆ ಹೆಚ್ಚಿನ ಮೆಮೊರಿಯನ್ನು ಬಳಸುತ್ತವೆ.</string>
     <string name="mb_format">%1$d %2$s</string>
+
+    <string name="settings_language_title">ಅಪ್ಲಿಕೇಶನ್ ಭಾಷೆ</string>
+    <string name="settings_language_summary">ಅಪ್ಲಿಕೇಶನ್‌ಗಾಗಿ ಭಾಷೆಯನ್ನು ಆರಿಸಿ</string>
+    <string name="language_select_title">ಭಾಷೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ</string>
+    <string name="language_show_all">ಎಲ್ಲವನ್ನೂ ತೋರಿಸು</string>
 </resources>

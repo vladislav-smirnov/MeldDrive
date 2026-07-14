@@ -9,7 +9,7 @@
     <string name="content_desc_toggle_view">વ્યૂ બદલો</string>
     <string name="content_desc_settings">સેટિંગ્સ</string>
     <string name="content_desc_back">પાછા</string>
-    <string name="search_placeholder">ફાઇલો શોધો...</string>
+    <string name="search_placeholder">ફાઇલો શોધો…</string>
     <string name="content_desc_clear">સાફ કરો</string>
     <string name="internal_storage">આંતરિક સ્ટોરેજ</string>
     <string name="root">રૂટ</string>
@@ -45,4 +45,9 @@
     <string name="settings_buffer_size_title">બફર કદ: %1$d %2$s</string>
     <string name="settings_buffer_size_summary">મોટા બફર સ્થિરતામાં સુધારો કરે છે પરંતુ વધુ મેમરી વાપરે છે.</string>
     <string name="mb_format">%1$d %2$s</string>
+
+    <string name="settings_language_title">એપ્લિકેશન ભાષા</string>
+    <string name="settings_language_summary">એપ્લિકેશન માટે ભાષા પસંદ કરો</string>
+    <string name="language_select_title">ભાષા પસંદ કરો</string>
+    <string name="language_show_all">બધું બતાવો</string>
 </resources>

@@ -69,7 +69,7 @@ fun AddStorageContent(state: AddStorageState, onIntent: (AddStorageIntent) -> Un
             TopAppBar(
                 title = { Text(stringResource(R.string.add_storage_title, stringResource(R.string.untranslatable_smb))) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = onBack, modifier = Modifier.testTag("back_button")) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.content_desc_back))
                     }
                 },

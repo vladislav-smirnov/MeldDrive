@@ -9,7 +9,7 @@
     <string name="content_desc_toggle_view">Переключить вид</string>
     <string name="content_desc_settings">Настройки</string>
     <string name="content_desc_back">Назад</string>
-    <string name="search_placeholder">Поиск файлов...</string>
+    <string name="search_placeholder">Поиск файлов…</string>
     <string name="content_desc_clear">Очистить</string>
     <string name="internal_storage">Внутренняя память</string>
     <string name="root">Корень</string>
@@ -45,4 +45,9 @@
     <string name="settings_buffer_size_title">Размер буфера: %1$d %2$s</string>
     <string name="settings_buffer_size_summary">Большие буферы улучшают стабильность, но используют больше памяти.</string>
     <string name="mb_format">%1$d %2$s</string>
+
+    <string name="settings_language_title">Язык приложения</string>
+    <string name="settings_language_summary">Выберите язык для приложения</string>
+    <string name="language_select_title">Выберите язык</string>
+    <string name="language_show_all">Показать все</string>
 </resources>

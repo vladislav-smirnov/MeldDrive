@@ -9,7 +9,7 @@
     <string name="content_desc_toggle_view">تبديل العرض</string>
     <string name="content_desc_settings">الإعدادات</string>
     <string name="content_desc_back">رجوع</string>
-    <string name="search_placeholder">بحث عن ملفات...</string>
+    <string name="search_placeholder">بحث عن ملفات…</string>
     <string name="content_desc_clear">مسح</string>
     <string name="internal_storage">وحدة التخزين الداخلية</string>
     <string name="root">الجذر</string>
@@ -45,4 +45,9 @@
     <string name="settings_buffer_size_title">حجم التخزين المؤقت: %1$d %2$s</string>
     <string name="settings_buffer_size_summary">الذاكرة المؤقتة الأكبر تحسن الاستقرار ولكنها تستهلك المزيد من الذاكرة.</string>
     <string name="mb_format">%1$d %2$s</string>
+
+    <string name="settings_language_title">لغة التطبيق</string>
+    <string name="settings_language_summary">اختر لغة التطبيق</string>
+    <string name="language_select_title">اختر اللغة</string>
+    <string name="language_show_all">إظهار الكل</string>
 </resources>

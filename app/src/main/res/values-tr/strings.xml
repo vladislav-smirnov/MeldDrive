@@ -9,7 +9,7 @@
     <string name="content_desc_toggle_view">Görünümü Değiştir</string>
     <string name="content_desc_settings">Ayarlar</string>
     <string name="content_desc_back">Geri</string>
-    <string name="search_placeholder">Dosya ara...</string>
+    <string name="search_placeholder">Dosya ara…</string>
     <string name="content_desc_clear">Temizle</string>
     <string name="internal_storage">Dahili Depolama</string>
     <string name="root">Kök</string>
@@ -45,4 +45,9 @@
     <string name="settings_buffer_size_title">Arabellek Boyutu: %1$d %2$s</string>
     <string name="settings_buffer_size_summary">Daha büyük arabellekler kararlılığı artırır ancak daha fazla bellek kullanır.</string>
     <string name="mb_format">%1$d %2$s</string>
+
+    <string name="settings_language_title">Uygulama Dili</string>
+    <string name="settings_language_summary">Uygulama için dil seçin</string>
+    <string name="language_select_title">Dil Seçin</string>
+    <string name="language_show_all">Tümünü Göster</string>
 </resources>

@@ -9,7 +9,7 @@
     <string name="content_desc_toggle_view">Przełącz widok</string>
     <string name="content_desc_settings">Ustawienia</string>
     <string name="content_desc_back">Wstecz</string>
-    <string name="search_placeholder">Szukaj plików...</string>
+    <string name="search_placeholder">Szukaj plików…</string>
     <string name="content_desc_clear">Wyczyść</string>
     <string name="internal_storage">Pamięć wewnętrzna</string>
     <string name="root">Katalog główny</string>
@@ -45,4 +45,9 @@
     <string name="settings_buffer_size_title">Rozmiar bufora: %1$d %2$s</string>
     <string name="settings_buffer_size_summary">Większe bufory poprawiają stabilność, ale zużywają więcej pamięci.</string>
     <string name="mb_format">%1$d %2$s</string>
+
+    <string name="settings_language_title">Język aplikacji</string>
+    <string name="settings_language_summary">Wybierz język dla aplikacji</string>
+    <string name="language_select_title">Wybierz język</string>
+    <string name="language_show_all">Pokaż wszystko</string>
 </resources>

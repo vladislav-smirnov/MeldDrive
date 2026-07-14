@@ -112,7 +112,7 @@ fun DefaultTopBar(
     TopAppBar(
         navigationIcon = {
             if (onMenuClick != null) {
-                IconButton(onClick = onMenuClick) {
+                IconButton(onClick = onMenuClick, modifier = Modifier.testTag("drawer_button")) {
                     Icon(Icons.Default.Menu, contentDescription = stringResource(R.string.content_desc_menu))
                 }
             }

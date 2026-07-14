@@ -9,7 +9,7 @@
     <string name="content_desc_toggle_view">दृश्य बदलें</string>
     <string name="content_desc_settings">सेटिंग्स</string>
     <string name="content_desc_back">पीछे</string>
-    <string name="search_placeholder">फ़ाइलें खोजें...</string>
+    <string name="search_placeholder">फ़ाइलें खोजें…</string>
     <string name="content_desc_clear">साफ़ करें</string>
     <string name="internal_storage">आंतरिक संग्रहण</string>
     <string name="root">रूट</string>
@@ -45,4 +45,9 @@
     <string name="settings_buffer_size_title">बफ़र आकार: %1$d %2$s</string>
     <string name="settings_buffer_size_summary">बड़े बफ़र्स स्थिरता में सुधार करते हैं लेकिन अधिक मेमोरी का उपयोग करते हैं।</string>
     <string name="mb_format">%1$d %2$s</string>
+
+    <string name="settings_language_title">ऐप की भाषा</string>
+    <string name="settings_language_summary">एप्लिकेशन के लिए भाषा चुनें</string>
+    <string name="language_select_title">भाषा चुनें</string>
+    <string name="language_show_all">सभी दिखाएं</string>
 </resources>

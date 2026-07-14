@@ -9,7 +9,7 @@
     <string name="content_desc_toggle_view">Переключити вигляд</string>
     <string name="content_desc_settings">Налаштування</string>
     <string name="content_desc_back">Назад</string>
-    <string name="search_placeholder">Пошук файлів...</string>
+    <string name="search_placeholder">Пошук файлів…</string>
     <string name="content_desc_clear">Очистити</string>
     <string name="internal_storage">Внутрішня пам\'ять</string>
     <string name="root">Корінь</string>
@@ -45,4 +45,9 @@
     <string name="settings_buffer_size_title">Розмір буфера: %1$d %2$s</string>
     <string name="settings_buffer_size_summary">Більші буфери покращують стабільність, але використовують більше пам\'яті.</string>
     <string name="mb_format">%1$d %2$s</string>
+
+    <string name="settings_language_title">Мова додатка</string>
+    <string name="settings_language_summary">Виберіть мову для додатка</string>
+    <string name="language_select_title">Виберіть мову</string>
+    <string name="language_show_all">Показати все</string>
 </resources>

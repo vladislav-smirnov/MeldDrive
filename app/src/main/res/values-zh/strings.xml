@@ -9,7 +9,7 @@
     <string name="content_desc_toggle_view">切换视图</string>
     <string name="content_desc_settings">设置</string>
     <string name="content_desc_back">返回</string>
-    <string name="search_placeholder">搜索文件...</string>
+    <string name="search_placeholder">搜索文件…</string>
     <string name="content_desc_clear">清除</string>
     <string name="internal_storage">内部存储</string>
     <string name="root">根目录</string>
@@ -45,4 +45,9 @@
     <string name="settings_buffer_size_title">缓冲区大小：%1$d %2$s</string>
     <string name="settings_buffer_size_summary">较大的缓冲区可以提高稳定性，但会消耗更多内存。</string>
     <string name="mb_format">%1$d %2$s</string>
+
+    <string name="settings_language_title">应用语言</string>
+    <string name="settings_language_summary">选择应用语言</string>
+    <string name="language_select_title">选择语言</string>
+    <string name="language_show_all">显示全部</string>
 </resources>

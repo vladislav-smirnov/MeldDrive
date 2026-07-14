@@ -9,7 +9,7 @@
     <string name="content_desc_toggle_view">Alternar visualização</string>
     <string name="content_desc_settings">Configurações</string>
     <string name="content_desc_back">Voltar</string>
-    <string name="search_placeholder">Pesquisar arquivos...</string>
+    <string name="search_placeholder">Pesquisar arquivos…</string>
     <string name="content_desc_clear">Limpar</string>
     <string name="internal_storage">Armazenamento interno</string>
     <string name="root">Raiz</string>
@@ -45,4 +45,9 @@
     <string name="settings_buffer_size_title">Tamanho do buffer: %1$d %2$s</string>
     <string name="settings_buffer_size_summary">Buffers maiores melhoram a estabilidade, mas usam mais memória.</string>
     <string name="mb_format">%1$d %2$s</string>
+
+    <string name="settings_language_title">Idioma do aplicativo</string>
+    <string name="settings_language_summary">Escolha o idioma para o aplicativo</string>
+    <string name="language_select_title">Selecionar idioma</string>
+    <string name="language_show_all">Mostrar tudo</string>
 </resources>
