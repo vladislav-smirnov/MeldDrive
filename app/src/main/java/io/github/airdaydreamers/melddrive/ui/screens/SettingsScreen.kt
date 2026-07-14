@@ -1,5 +1,8 @@
 package io.github.airdaydreamers.melddrive.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -108,36 +112,47 @@ fun BufferingToggleSection(bufferingEnabled: Boolean, onCheckedChange: (Boolean)
 
 @Composable
 fun BufferSizeSection(bufferingEnabled: Boolean, bufferSizeMb: Int, onValueChange: (Int) -> Unit) {
-    if (bufferingEnabled) {
-        Text(
-            text = "Buffer Size: $bufferSizeMb MB",
-            style = MaterialTheme.typography.titleMedium,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Slider(
-            value = bufferSizeMb.toFloat(),
-            onValueChange = { onValueChange(it.toInt()) },
-            valueRange = MIN_BUFFER_MB..MAX_BUFFER_MB,
-            steps = BUFFER_STEPS,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+    // Show a card with buffer size controls only when buffering is enabled.
+    AnimatedVisibility(
+        visible = bufferingEnabled,
+        enter = fadeIn(),
+        exit = fadeOut(),
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth(),
         ) {
-            Text("8 MB", style = MaterialTheme.typography.bodySmall)
-            Text("128 MB", style = MaterialTheme.typography.bodySmall)
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    text = "Buffer Size: $bufferSizeMb MB",
+                    style = MaterialTheme.typography.titleMedium,
+                )
+
+                Text(
+                    text = "Larger buffers improve stability but use more memory.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                Slider(
+                    value = bufferSizeMb.toFloat(),
+                    onValueChange = { onValueChange(it.toInt()) },
+                    valueRange = MIN_BUFFER_MB..MAX_BUFFER_MB,
+                    steps = BUFFER_STEPS,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text("${MIN_BUFFER_MB.toInt()} MB", style = MaterialTheme.typography.bodySmall)
+                    Text("${MAX_BUFFER_MB.toInt()} MB", style = MaterialTheme.typography.bodySmall)
+                }
+            }
         }
-    } else {
-        Text(
-            text = "Buffer Size: Disabled",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = "Enable SMB Buffering to configure buffer size",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }
