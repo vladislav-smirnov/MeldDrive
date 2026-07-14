@@ -1,10 +1,13 @@
 package io.github.airdaydreamers.melddrive.ui.viewmodel
 
+import android.content.Context
 import app.cash.turbine.test
+import io.github.airdaydreamers.melddrive.R
 import io.github.airdaydreamers.melddrive.data.repository.ServerRepository
 import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageEffect
 import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageIntent
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -29,13 +32,16 @@ class AddStorageViewModelTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var serverRepository: ServerRepository
+    private lateinit var mockContext: Context
     private lateinit var viewModel: AddStorageViewModel
 
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         serverRepository = mockk(relaxed = true)
-        viewModel = AddStorageViewModel(serverRepository)
+        mockContext = mockk(relaxed = true)
+        every { mockContext.getString(R.string.error_host_display_mandatory) } returns "Host and Display Name are mandatory"
+        viewModel = AddStorageViewModel(serverRepository, mockContext)
     }
 
     @AfterEach

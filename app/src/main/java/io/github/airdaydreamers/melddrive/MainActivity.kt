@@ -129,7 +129,7 @@ class MainActivity : ComponentActivity() {
         try {
             startActivity(intent)
         } catch (_: ActivityNotFoundException) {
-            Toast.makeText(this, "No app found to open this file type", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.no_app_found), Toast.LENGTH_SHORT).show()
         }
     }
 

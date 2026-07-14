@@ -1,3 +1,63 @@
-<resources>
-    <string name="app_name">MeldDrive</string>
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <!-- Untranslatable -->
+    <string name="app_name" translatable="false">MeldDrive</string>
+    <string name="untranslatable_smb" translatable="false">SMB</string>
+    <string name="untranslatable_nas" translatable="false">NAS</string>
+    <string name="untranslatable_ip" translatable="false">IP</string>
+    <string name="untranslatable_mb" translatable="false">MB</string>
+
+    <!-- UI Strings -->
+    <string name="no_app_found">No app found to open this file type</string>
+    <string name="sidebar_title">File Manager</string>
+    <string name="sidebar_remote_section">Remote</string>
+    <string name="delete_server">Delete Server</string>
+
+    <string name="content_desc_menu">Menu</string>
+    <string name="content_desc_search">Search</string>
+    <string name="content_desc_toggle_view">Toggle View</string>
+    <string name="content_desc_settings">Settings</string>
+    <string name="content_desc_back">Back</string>
+    <string name="search_placeholder">Search files...</string>
+    <string name="content_desc_clear">Clear</string>
+    <string name="internal_storage">Internal Storage</string>
+    <string name="root">Root</string>
+    <string name="remote">Remote</string>
+
+    <string name="add_storage_title">Add <xliff:g id="smb">%1$s</xliff:g> Storage</string>
+    <string name="label_display_name">Display Name (e.g. Home <xliff:g id="nas">%1$s</xliff:g>)</string>
+    <string name="label_host">Host Address (<xliff:g id="ip">%1$s</xliff:g> or hostname)</string>
+    <string name="label_port">Port (default 445)</string>
+    <string name="anonymous_access">Anonymous Access</string>
+    <string name="label_username">Username</string>
+    <string name="label_password">Password</string>
+    <string name="btn_connect_save">Connect &amp; Save</string>
+
+    <string name="error_host_display_mandatory">Host and Display Name are mandatory</string>
+
+    <string name="remove_server_dialog_title">Remove Server</string>
+    <string name="remove_server_dialog_text">Are you sure you want to remove this server?</string>
+    <string name="btn_remove">Remove</string>
+    <string name="btn_cancel">Cancel</string>
+
+    <string name="search_error">Search error: %1$s</string>
+    <string name="toast_server_removed">Server removed</string>
+    <string name="toast_error">Error: %1$s</string>
+    <string name="toast_files_deleted">Files deleted</string>
+    <string name="toast_file_renamed">File renamed</string>
+    <string name="toast_folder_created">Folder created</string>
+
+    <string name="sidebar_home">Home</string>
+    <string name="sidebar_downloads">Downloads</string>
+    <string name="sidebar_photos">Photos</string>
+    <string name="sidebar_movies">Movies</string>
+    <string name="sidebar_music">Music</string>
+    <string name="sidebar_add_storage">Add Storage</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_enable_buffering_title">Enable <xliff:g id="smb">%1$s</xliff:g> Buffering</string>
+    <string name="settings_enable_buffering_summary">Prefetch next chunks in parallel when playing/reading <xliff:g id="smb">%1$s</xliff:g> files</string>
+    <string name="settings_buffer_size_title">Buffer Size: %1$d <xliff:g id="mb">%2$s</xliff:g></string>
+    <string name="settings_buffer_size_summary">Larger buffers improve stability but use more memory.</string>
+    <string name="mb_format">%1$d <xliff:g id="mb">%2$s</xliff:g></string>
 </resources>

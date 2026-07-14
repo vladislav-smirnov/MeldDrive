@@ -31,9 +31,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.airdaydreamers.melddrive.R
 import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageEffect
 import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageIntent
 import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageState
@@ -65,10 +67,10 @@ fun AddStorageContent(state: AddStorageState, onIntent: (AddStorageIntent) -> Un
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Add SMB Storage") },
+                title = { Text(stringResource(R.string.add_storage_title, stringResource(R.string.untranslatable_smb))) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.content_desc_back))
                     }
                 },
             )
@@ -106,21 +108,21 @@ private fun AddStorageFields(state: AddStorageState, onIntent: (AddStorageIntent
     OutlinedTextField(
         value = state.displayName,
         onValueChange = { onIntent(AddStorageIntent.DisplayNameChange(it)) },
-        label = { Text("Display Name (e.g. Home NAS)") },
+        label = { Text(stringResource(R.string.label_display_name, stringResource(R.string.untranslatable_nas))) },
         modifier = Modifier.fillMaxWidth().testTag("display_name_input"),
     )
 
     OutlinedTextField(
         value = state.host,
         onValueChange = { onIntent(AddStorageIntent.HostChange(it)) },
-        label = { Text("Host Address (IP or hostname)") },
+        label = { Text(stringResource(R.string.label_host, stringResource(R.string.untranslatable_ip))) },
         modifier = Modifier.fillMaxWidth().testTag("host_input"),
     )
 
     OutlinedTextField(
         value = state.port,
         onValueChange = { onIntent(AddStorageIntent.PortChange(it)) },
-        label = { Text("Port (default 445)") },
+        label = { Text(stringResource(R.string.label_port)) },
         modifier = Modifier.fillMaxWidth().testTag("port_input"),
     )
 
@@ -130,21 +132,21 @@ private fun AddStorageFields(state: AddStorageState, onIntent: (AddStorageIntent
             onCheckedChange = { onIntent(AddStorageIntent.AnonymousChange(it)) },
             modifier = Modifier.testTag("anonymous_checkbox"),
         )
-        Text("Anonymous Access")
+        Text(stringResource(R.string.anonymous_access))
     }
 
     if (!state.isAnonymous) {
         OutlinedTextField(
             value = state.username,
             onValueChange = { onIntent(AddStorageIntent.UsernameChange(it)) },
-            label = { Text("Username") },
+            label = { Text(stringResource(R.string.label_username)) },
             modifier = Modifier.fillMaxWidth().testTag("username_input"),
         )
 
         OutlinedTextField(
             value = state.password,
             onValueChange = { onIntent(AddStorageIntent.PasswordChange(it)) },
-            label = { Text("Password") },
+            label = { Text(stringResource(R.string.label_password)) },
             modifier = Modifier.fillMaxWidth().testTag("password_input"),
         )
     }
@@ -165,6 +167,6 @@ private fun ColumnScope.AddStorageButtons(state: AddStorageState, onIntent: (Add
             )
             Spacer(Modifier.width(8.dp))
         }
-        Text("Connect & Save")
+        Text(stringResource(R.string.btn_connect_save))
     }
 }

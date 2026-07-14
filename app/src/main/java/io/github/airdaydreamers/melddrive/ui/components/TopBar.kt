@@ -40,7 +40,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import io.github.airdaydreamers.melddrive.R
 import io.github.airdaydreamers.melddrive.data.model.StorageType
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -111,7 +113,7 @@ fun DefaultTopBar(
         navigationIcon = {
             if (onMenuClick != null) {
                 IconButton(onClick = onMenuClick) {
-                    Icon(Icons.Default.Menu, contentDescription = "Menu")
+                    Icon(Icons.Default.Menu, contentDescription = stringResource(R.string.content_desc_menu))
                 }
             }
         },
@@ -125,16 +127,16 @@ fun DefaultTopBar(
         },
         actions = {
             IconButton(onClick = onSearchClick, modifier = Modifier.testTag("search_button")) {
-                Icon(Icons.Default.Search, contentDescription = "Search")
+                Icon(Icons.Default.Search, contentDescription = stringResource(R.string.content_desc_search))
             }
             IconButton(onClick = { onToggleViewMode(!isGridView) }) {
                 Icon(
                     if (isGridView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
-                    contentDescription = "Toggle View",
+                    contentDescription = stringResource(R.string.content_desc_toggle_view),
                 )
             }
             IconButton(onClick = onSettingsClick, modifier = Modifier.testTag("settings_button")) {
-                Icon(Icons.Default.Settings, contentDescription = "Settings")
+                Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.content_desc_settings))
             }
         },
     )
@@ -152,7 +154,7 @@ fun SearchTopBar(searchQuery: String, onSearchQueryChange: (String) -> Unit, onC
     TopAppBar(
         navigationIcon = {
             IconButton(onClick = onCloseSearch, modifier = Modifier.testTag("search_close_button")) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.content_desc_back))
             }
         },
         title = {
@@ -163,7 +165,7 @@ fun SearchTopBar(searchQuery: String, onSearchQueryChange: (String) -> Unit, onC
                     .fillMaxWidth()
                     .focusRequester(focusRequester)
                     .testTag("search_input"),
-                placeholder = { Text("Search files...") },
+                placeholder = { Text(stringResource(R.string.search_placeholder)) },
                 singleLine = true,
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.Transparent,
@@ -177,7 +179,7 @@ fun SearchTopBar(searchQuery: String, onSearchQueryChange: (String) -> Unit, onC
         actions = {
             if (searchQuery.isNotEmpty()) {
                 IconButton(onClick = { onSearchQueryChange("") }) {
-                    Icon(Icons.Default.Close, contentDescription = "Clear")
+                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.content_desc_clear))
                 }
             }
         },
@@ -186,8 +188,12 @@ fun SearchTopBar(searchQuery: String, onSearchQueryChange: (String) -> Unit, onC
 
 @Composable
 fun Breadcrumbs(currentPath: String, storageType: StorageType, serverName: String?, onNavigateTo: (String) -> Unit) {
-    val breadcrumbItems = remember(currentPath, storageType, serverName) {
-        getBreadcrumbItems(currentPath, storageType, serverName)
+    val internalStorageText = stringResource(R.string.internal_storage)
+    val rootText = stringResource(R.string.root)
+    val remoteText = stringResource(R.string.remote)
+
+    val breadcrumbItems = remember(currentPath, storageType, serverName, internalStorageText, rootText, remoteText) {
+        getBreadcrumbItems(currentPath, storageType, serverName, internalStorageText, rootText, remoteText)
     }
 
     LazyRow(
@@ -216,13 +222,20 @@ fun Breadcrumbs(currentPath: String, storageType: StorageType, serverName: Strin
     }
 }
 
-private fun getBreadcrumbItems(currentPath: String, storageType: StorageType, serverName: String?): List<Pair<String, String>> = when (storageType) {
-    StorageType.LOCAL -> getLocalBreadcrumbs(currentPath)
-    StorageType.SMB -> getSmbBreadcrumbs(currentPath, serverName)
+private fun getBreadcrumbItems(
+    currentPath: String,
+    storageType: StorageType,
+    serverName: String?,
+    internalStorageText: String,
+    rootText: String,
+    remoteText: String,
+): List<Pair<String, String>> = when (storageType) {
+    StorageType.LOCAL -> getLocalBreadcrumbs(currentPath, internalStorageText, rootText)
+    StorageType.SMB -> getSmbBreadcrumbs(currentPath, serverName, remoteText)
     else -> emptyList()
 }
 
-private fun getLocalBreadcrumbs(currentPath: String): List<Pair<String, String>> {
+private fun getLocalBreadcrumbs(currentPath: String, internalStorageText: String, rootText: String): List<Pair<String, String>> {
     val items = mutableListOf<Pair<String, String>>()
     val rootPath = System.getProperty("test.local.root") ?: try {
         Environment.getExternalStorageDirectory().absolutePath
@@ -230,7 +243,7 @@ private fun getLocalBreadcrumbs(currentPath: String): List<Pair<String, String>>
         // Fallback for preview mode or when system services are unavailable
         "/storage/emulated/0"
     }
-    items.add("Internal Storage" to rootPath)
+    items.add(internalStorageText to rootPath)
 
     if (currentPath.startsWith(rootPath)) {
         val relativePath = currentPath.removePrefix(rootPath).trimStart('/')
@@ -240,7 +253,7 @@ private fun getLocalBreadcrumbs(currentPath: String): List<Pair<String, String>>
         }
     } else {
         val parts = currentPath.split("/").filter { it.isNotEmpty() }
-        items.add("Root" to "/")
+        items.add(rootText to "/")
         addRootBreadcrumbParts(items, parts)
     }
     return items
@@ -262,9 +275,9 @@ private fun addRootBreadcrumbParts(items: MutableList<Pair<String, String>>, par
     }
 }
 
-private fun getSmbBreadcrumbs(currentPath: String, serverName: String?): List<Pair<String, String>> {
+private fun getSmbBreadcrumbs(currentPath: String, serverName: String?, remoteText: String): List<Pair<String, String>> {
     val items = mutableListOf<Pair<String, String>>()
-    items.add((serverName ?: "Remote") to "")
+    items.add((serverName ?: remoteText) to "")
     if (currentPath.isNotEmpty()) {
         val parts = currentPath.split("/").filter { it.isNotEmpty() }
         addSmbBreadcrumbParts(items, parts)

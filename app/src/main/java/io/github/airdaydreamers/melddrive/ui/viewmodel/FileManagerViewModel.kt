@@ -1,5 +1,6 @@
 package io.github.airdaydreamers.melddrive.ui.viewmodel
 
+import android.content.Context
 import android.os.Environment
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -12,6 +13,8 @@ import androidx.compose.material.icons.filled.Storage
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import io.github.airdaydreamers.melddrive.R
 import io.github.airdaydreamers.melddrive.data.model.SidebarItem
 import io.github.airdaydreamers.melddrive.data.model.SidebarItemType
 import io.github.airdaydreamers.melddrive.data.model.StorageException
@@ -36,7 +39,11 @@ import java.io.IOException
 import javax.inject.Inject
 
 @HiltViewModel
-class FileManagerViewModel @Inject constructor(private val repository: FileRepository, private val serverRepository: ServerRepository) : ViewModel() {
+class FileManagerViewModel @Inject constructor(
+    private val repository: FileRepository,
+    private val serverRepository: ServerRepository,
+    @ApplicationContext private val context: Context,
+) : ViewModel() {
 
     private val _state = MutableStateFlow(
         FileManagerState(
@@ -146,10 +153,10 @@ class FileManagerViewModel @Inject constructor(private val repository: FileRepos
                 _state.update { it.copy(files = files, isLoading = false) }
             } catch (e: StorageException) {
                 _state.update { it.copy(isLoading = false) }
-                _effect.send(FileManagerEffect.ShowToast("Search error: ${e.message}"))
+                _effect.send(FileManagerEffect.ShowToast(context.getString(R.string.search_error, e.message)))
             } catch (e: IOException) {
                 _state.update { it.copy(isLoading = false) }
-                _effect.send(FileManagerEffect.ShowToast("Search error: ${e.message}"))
+                _effect.send(FileManagerEffect.ShowToast(context.getString(R.string.search_error, e.message)))
             }
         }
     }
@@ -170,12 +177,12 @@ class FileManagerViewModel @Inject constructor(private val repository: FileRepos
                             ),
                         )
                     }
-                    _effect.send(FileManagerEffect.ShowToast("Server removed"))
+                    _effect.send(FileManagerEffect.ShowToast(context.getString(R.string.toast_server_removed)))
                 }
             } catch (e: StorageException) {
-                _effect.send(FileManagerEffect.ShowToast("Error: ${e.message}"))
+                _effect.send(FileManagerEffect.ShowToast(context.getString(R.string.toast_error, e.message)))
             } catch (e: IOException) {
-                _effect.send(FileManagerEffect.ShowToast("Error: ${e.message}"))
+                _effect.send(FileManagerEffect.ShowToast(context.getString(R.string.toast_error, e.message)))
             }
         }
     }
@@ -188,10 +195,10 @@ class FileManagerViewModel @Inject constructor(private val repository: FileRepos
                 _state.update { it.copy(files = files, isLoading = false) }
             } catch (e: StorageException) {
                 _state.update { it.copy(isLoading = false, errorMessage = e.message) }
-                _effect.send(FileManagerEffect.ShowToast("Error: ${e.message}"))
+                _effect.send(FileManagerEffect.ShowToast(context.getString(R.string.toast_error, e.message)))
             } catch (e: IOException) {
                 _state.update { it.copy(isLoading = false, errorMessage = e.message) }
-                _effect.send(FileManagerEffect.ShowToast("Error: ${e.message}"))
+                _effect.send(FileManagerEffect.ShowToast(context.getString(R.string.toast_error, e.message)))
             }
         }
     }
@@ -202,11 +209,11 @@ class FileManagerViewModel @Inject constructor(private val repository: FileRepos
                 paths.forEach { repository.deleteFile(it, _state.value.currentStorageType, _state.value.currentServerId) }
                 _state.update { it.copy(selectedFiles = emptySet()) }
                 onIntent(FileManagerIntent.Refresh)
-                _effect.send(FileManagerEffect.ShowToast("Files deleted"))
+                _effect.send(FileManagerEffect.ShowToast(context.getString(R.string.toast_files_deleted)))
             } catch (e: StorageException) {
-                _effect.send(FileManagerEffect.ShowToast("Error: ${e.message}"))
+                _effect.send(FileManagerEffect.ShowToast(context.getString(R.string.toast_error, e.message)))
             } catch (e: IOException) {
-                _effect.send(FileManagerEffect.ShowToast("Error: ${e.message}"))
+                _effect.send(FileManagerEffect.ShowToast(context.getString(R.string.toast_error, e.message)))
             }
         }
     }
@@ -216,11 +223,11 @@ class FileManagerViewModel @Inject constructor(private val repository: FileRepos
             try {
                 repository.renameFile(path, newName, _state.value.currentStorageType, _state.value.currentServerId)
                 onIntent(FileManagerIntent.Refresh)
-                _effect.send(FileManagerEffect.ShowToast("File renamed"))
+                _effect.send(FileManagerEffect.ShowToast(context.getString(R.string.toast_file_renamed)))
             } catch (e: StorageException) {
-                _effect.send(FileManagerEffect.ShowToast("Error: ${e.message}"))
+                _effect.send(FileManagerEffect.ShowToast(context.getString(R.string.toast_error, e.message)))
             } catch (e: IOException) {
-                _effect.send(FileManagerEffect.ShowToast("Error: ${e.message}"))
+                _effect.send(FileManagerEffect.ShowToast(context.getString(R.string.toast_error, e.message)))
             }
         }
     }
@@ -230,11 +237,11 @@ class FileManagerViewModel @Inject constructor(private val repository: FileRepos
             try {
                 repository.createFolder(_state.value.currentPath, name, _state.value.currentStorageType, _state.value.currentServerId)
                 onIntent(FileManagerIntent.Refresh)
-                _effect.send(FileManagerEffect.ShowToast("Folder created"))
+                _effect.send(FileManagerEffect.ShowToast(context.getString(R.string.toast_folder_created)))
             } catch (e: StorageException) {
-                _effect.send(FileManagerEffect.ShowToast("Error: ${e.message}"))
+                _effect.send(FileManagerEffect.ShowToast(context.getString(R.string.toast_error, e.message)))
             } catch (e: IOException) {
-                _effect.send(FileManagerEffect.ShowToast("Error: ${e.message}"))
+                _effect.send(FileManagerEffect.ShowToast(context.getString(R.string.toast_error, e.message)))
             }
         }
     }

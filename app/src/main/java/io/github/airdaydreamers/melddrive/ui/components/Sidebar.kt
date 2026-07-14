@@ -27,7 +27,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import io.github.airdaydreamers.melddrive.R
 import io.github.airdaydreamers.melddrive.data.model.SidebarItem
 import io.github.airdaydreamers.melddrive.data.model.SidebarItemType
 
@@ -45,14 +47,25 @@ fun FileManagerSidebar(items: List<SidebarItem>, currentPath: String, onItemClic
         ) {
             items.forEach { item ->
                 val isSelected = item.path == currentPath
+                val title = item.title
+                // Convert default system folder names to their translated string resources if matched, or keep original
+                val labelText = when (title) {
+                    "Home" -> stringResource(R.string.sidebar_home)
+                    "Downloads" -> stringResource(R.string.sidebar_downloads)
+                    "Photos" -> stringResource(R.string.sidebar_photos)
+                    "Movies" -> stringResource(R.string.sidebar_movies)
+                    "Music" -> stringResource(R.string.sidebar_music)
+                    "Add Storage" -> stringResource(R.string.sidebar_add_storage)
+                    else -> title
+                }
                 NavigationRailItem(
                     selected = isSelected,
                     onClick = { onItemClick(item) },
                     icon = {
-                        Icon(item.icon, contentDescription = item.title)
+                        Icon(item.icon, contentDescription = labelText)
                     },
                     label = {
-                        Text(item.title, style = MaterialTheme.typography.labelSmall)
+                        Text(labelText, style = MaterialTheme.typography.labelSmall)
                     },
                     modifier = Modifier.testTag("sidebar_item_${item.title}"),
                 )
@@ -89,7 +102,7 @@ private fun DrawerContentBody(items: List<SidebarItem>, currentPath: String, onI
     Column(modifier = Modifier.verticalScroll(scrollState)) {
         Spacer(Modifier.height(12.dp))
         Text(
-            "File Manager",
+            stringResource(R.string.sidebar_title),
             modifier = Modifier.padding(16.dp),
             style = MaterialTheme.typography.titleLarge,
         )
@@ -105,7 +118,7 @@ private fun DrawerContentBody(items: List<SidebarItem>, currentPath: String, onI
         if (remoteItems.isNotEmpty()) {
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             Text(
-                "Remote",
+                stringResource(R.string.sidebar_remote_section),
                 modifier = Modifier.padding(horizontal = 28.dp, vertical = 8.dp),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
@@ -133,13 +146,24 @@ private fun DrawerContentBody(items: List<SidebarItem>, currentPath: String, onI
 fun SidebarDrawerItem(item: SidebarItem, currentPath: String, onItemClick: (SidebarItem) -> Unit, onLongClick: (() -> Unit)? = null) {
     val isSelected = item.path == currentPath && item.type != SidebarItemType.ADD_STORAGE
 
+    val title = item.title
+    val displayLabelText = when (title) {
+        "Home" -> stringResource(R.string.sidebar_home)
+        "Downloads" -> stringResource(R.string.sidebar_downloads)
+        "Photos" -> stringResource(R.string.sidebar_photos)
+        "Movies" -> stringResource(R.string.sidebar_movies)
+        "Music" -> stringResource(R.string.sidebar_music)
+        "Add Storage" -> stringResource(R.string.sidebar_add_storage)
+        else -> title
+    }
+
     NavigationDrawerItem(
         label = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text(item.title)
+                Text(displayLabelText)
                 if (item.type == SidebarItemType.REMOTE_SERVER && onLongClick != null) {
                     IconButton(
                         onClick = { onLongClick() },
@@ -147,7 +171,7 @@ fun SidebarDrawerItem(item: SidebarItem, currentPath: String, onItemClick: (Side
                     ) {
                         Icon(
                             Icons.Default.Delete,
-                            contentDescription = "Delete Server",
+                            contentDescription = stringResource(R.string.delete_server),
                             modifier = Modifier.size(16.dp),
                             tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                         )

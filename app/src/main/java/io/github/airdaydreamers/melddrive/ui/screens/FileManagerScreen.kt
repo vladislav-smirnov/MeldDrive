@@ -25,9 +25,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.airdaydreamers.melddrive.R
 import io.github.airdaydreamers.melddrive.data.model.FileItem
 import io.github.airdaydreamers.melddrive.data.model.SidebarItem
 import io.github.airdaydreamers.melddrive.data.model.SidebarItemType
@@ -74,19 +76,19 @@ fun FileManagerScreen(
     if (serverToDelete != null) {
         AlertDialog(
             onDismissRequest = { serverToDelete = null },
-            title = { Text("Remove Server") },
-            text = { Text("Are you sure you want to remove this server?") },
+            title = { Text(stringResource(R.string.remove_server_dialog_title)) },
+            text = { Text(stringResource(R.string.remove_server_dialog_text)) },
             confirmButton = {
                 TextButton(onClick = {
                     serverToDelete?.let { viewModel.onIntent(FileManagerIntent.DeleteRemoteServer(it)) }
                     serverToDelete = null
                 }) {
-                    Text("Remove")
+                    Text(stringResource(R.string.btn_remove))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { serverToDelete = null }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.btn_cancel))
                 }
             },
         )
