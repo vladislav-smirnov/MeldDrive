@@ -1,11 +1,16 @@
 package io.github.airdaydreamers.melddrive.ui.viewmodel
 
+import android.util.Log
+import androidx.appcompat.app.AppCompatDelegate
 import app.cash.turbine.test
 import io.github.airdaydreamers.melddrive.data.storage.SettingsManager
 import io.github.airdaydreamers.melddrive.ui.mvi.SettingsIntent
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,6 +40,9 @@ class SettingsViewModelTest {
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        mockkStatic(Log::class)
+        every { Log.d(any(), any()) } returns 0
+
         settingsManager = mockk(relaxed = true)
 
         every { settingsManager.bufferingEnabled } returns bufferingEnabledFlow
@@ -45,6 +53,7 @@ class SettingsViewModelTest {
 
     @AfterEach
     fun tearDown() {
+        unmockkStatic(Log::class)
         Dispatchers.resetMain()
     }
 
@@ -97,5 +106,24 @@ class SettingsViewModelTest {
 
         // Then
         coVerify(exactly = 1) { settingsManager.setBufferSizeMb(32) }
+    }
+
+    /**
+     * Use Case: Process SetLanguage Intent
+     * Given the viewmodel is initialized
+     * When onIntent(SettingsIntent.SetLanguage("de")) is called
+     * Then it should call AppCompatDelegate.setApplicationLocales
+     */
+    @Test
+    fun testSetLanguageIntent() {
+        mockkStatic(AppCompatDelegate::class)
+        every { AppCompatDelegate.setApplicationLocales(any()) } returns Unit
+
+        // When
+        viewModel.onIntent(SettingsIntent.SetLanguage("de"))
+
+        // Then
+        verify(exactly = 1) { AppCompatDelegate.setApplicationLocales(any()) }
+        unmockkStatic(AppCompatDelegate::class)
     }
 }

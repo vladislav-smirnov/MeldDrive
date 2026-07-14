@@ -9,7 +9,7 @@
     <string name="content_desc_toggle_view">Basculer l\'affichage</string>
     <string name="content_desc_settings">Paramètres</string>
     <string name="content_desc_back">Retour</string>
-    <string name="search_placeholder">Rechercher des fichiers...</string>
+    <string name="search_placeholder">Rechercher des fichiers…</string>
     <string name="content_desc_clear">Effacer</string>
     <string name="internal_storage">Stockage interne</string>
     <string name="root">Racine</string>
@@ -45,4 +45,9 @@
     <string name="settings_buffer_size_title">Taille du tampon : %1$d %2$s</string>
     <string name="settings_buffer_size_summary">Les tampons plus grands améliorent la stabilité mais consomment plus de mémoire.</string>
     <string name="mb_format">%1$d %2$s</string>
+
+    <string name="settings_language_title">Langue de l\'application</string>
+    <string name="settings_language_summary">Choisissez la langue de l\'application</string>
+    <string name="language_select_title">Sélectionner la langue</string>
+    <string name="language_show_all">Afficher tout</string>
 </resources>

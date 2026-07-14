@@ -9,7 +9,7 @@
     <string name="content_desc_toggle_view">Weergave wisselen</string>
     <string name="content_desc_settings">Instellingen</string>
     <string name="content_desc_back">Terug</string>
-    <string name="search_placeholder">Bestanden zoeken...</string>
+    <string name="search_placeholder">Bestanden zoeken…</string>
     <string name="content_desc_clear">Wissen</string>
     <string name="internal_storage">Interne opslag</string>
     <string name="root">Root</string>
@@ -45,4 +45,9 @@
     <string name="settings_buffer_size_title">Buffergrootte: %1$d %2$s</string>
     <string name="settings_buffer_size_summary">Grotere buffers verbeteren de stabiliteit, maar gebruiken meer geheugen.</string>
     <string name="mb_format">%1$d %2$s</string>
+
+    <string name="settings_language_title">App-taal</string>
+    <string name="settings_language_summary">Kies de taal voor de applicatie</string>
+    <string name="language_select_title">Selecteer taal</string>
+    <string name="language_show_all">Toon alles</string>
 </resources>

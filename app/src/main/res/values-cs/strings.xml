@@ -9,7 +9,7 @@
     <string name="content_desc_toggle_view">Přepnout zobrazení</string>
     <string name="content_desc_settings">Nastavení</string>
     <string name="content_desc_back">Zpět</string>
-    <string name="search_placeholder">Hledat soubory...</string>
+    <string name="search_placeholder">Hledat soubory…</string>
     <string name="content_desc_clear">Vymazat</string>
     <string name="internal_storage">Interní úložiště</string>
     <string name="root">Kořen</string>
@@ -45,4 +45,9 @@
     <string name="settings_buffer_size_title">Velikost vyrovnávací paměti: %1$d %2$s</string>
     <string name="settings_buffer_size_summary">Větší vyrovnávací paměti zlepšují stabilitu, ale spotřebovávají více paměti.</string>
     <string name="mb_format">%1$d %2$s</string>
+
+    <string name="settings_language_title">Jazyk aplikace</string>
+    <string name="settings_language_summary">Vyberte jazyk pro aplikaci</string>
+    <string name="language_select_title">Vyberte jazyk</string>
+    <string name="language_show_all">Zobrazit vše</string>
 </resources>

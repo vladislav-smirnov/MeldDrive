@@ -9,7 +9,7 @@
     <string name="content_desc_toggle_view">보기 전환</string>
     <string name="content_desc_settings">설정</string>
     <string name="content_desc_back">뒤로</string>
-    <string name="search_placeholder">파일 검색...</string>
+    <string name="search_placeholder">파일 검색…</string>
     <string name="content_desc_clear">지우기</string>
     <string name="internal_storage">내부 저장소</string>
     <string name="root">루트</string>
@@ -45,4 +45,9 @@
     <string name="settings_buffer_size_title">버퍼 크기: %1$d %2$s</string>
     <string name="settings_buffer_size_summary">버퍼가 클수록 안정성은 향상되지만 메모리를 더 많이 사용합니다.</string>
     <string name="mb_format">%1$d %2$s</string>
+
+    <string name="settings_language_title">앱 언어</string>
+    <string name="settings_language_summary">애플리케이션의 언어를 선택하세요</string>
+    <string name="language_select_title">언어 선택</string>
+    <string name="language_show_all">모두 보기</string>
 </resources>

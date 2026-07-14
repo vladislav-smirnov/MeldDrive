@@ -9,7 +9,7 @@
     <string name="content_desc_toggle_view">കാഴ്ച മാറ്റുക</string>
     <string name="content_desc_settings">ക്രമീകരണങ്ങൾ</string>
     <string name="content_desc_back">പിന്നോട്ട്</string>
-    <string name="search_placeholder">ഫയലുകൾ തിരയുക...</string>
+    <string name="search_placeholder">ഫയലുകൾ തിരയുക…</string>
     <string name="content_desc_clear">വൃത്തിയാക്കുക</string>
     <string name="internal_storage">ആന്തരിക സംഭരണം</string>
     <string name="root">റൂട്ട്</string>
@@ -45,4 +45,9 @@
     <string name="settings_buffer_size_title">ബഫർ വലുപ്പം: %1$d %2$s</string>
     <string name="settings_buffer_size_summary">വലിയ ബഫറുകൾ സ്ഥിരത മെച്ചപ്പെടുത്തുമെങ്കിലും കൂടുതൽ മെമ്മറി ഉപയോഗിക്കുന്നു.</string>
     <string name="mb_format">%1$d %2$s</string>
+
+    <string name="settings_language_title">അപ്ലിക്കേഷൻ ഭാഷ</string>
+    <string name="settings_language_summary">അപ്ലിക്കേഷനായി ഭാഷ തിരഞ്ഞെടുക്കുക</string>
+    <string name="language_select_title">ഭാഷ തിരഞ്ഞെടുക്കുക</string>
+    <string name="language_show_all">എല്ലാം കാണിക്കുക</string>
 </resources>

@@ -9,7 +9,7 @@
     <string name="content_desc_toggle_view">Ansicht umschalten</string>
     <string name="content_desc_settings">Einstellungen</string>
     <string name="content_desc_back">Zurück</string>
-    <string name="search_placeholder">Dateien suchen...</string>
+    <string name="search_placeholder">Dateien suchen…</string>
     <string name="content_desc_clear">Löschen</string>
     <string name="internal_storage">Interner Speicher</string>
     <string name="root">Root</string>
@@ -45,4 +45,9 @@
     <string name="settings_buffer_size_title">Puffergröße: %1$d %2$s</string>
     <string name="settings_buffer_size_summary">Größere Puffer verbessern die Stabilität, verbrauchen aber mehr Speicher.</string>
     <string name="mb_format">%1$d %2$s</string>
+
+    <string name="settings_language_title">App-Sprache</string>
+    <string name="settings_language_summary">Wählen Sie die Sprache für die Anwendung aus</string>
+    <string name="language_select_title">Sprache auswählen</string>
+    <string name="language_show_all">Alle anzeigen</string>
 </resources>

@@ -9,7 +9,7 @@
     <string name="content_desc_toggle_view">منظر تبدیل کریں</string>
     <string name="content_desc_settings">ترتیبات</string>
     <string name="content_desc_back">واپس</string>
-    <string name="search_placeholder">فائلیں تلاش کریں...</string>
+    <string name="search_placeholder">فائلیں تلاش کریں…</string>
     <string name="content_desc_clear">صاف کریں</string>
     <string name="internal_storage">اندرونی اسٹوریج</string>
     <string name="root">روٹ</string>
@@ -45,4 +45,9 @@
     <string name="settings_buffer_size_title">بفر سائز: %1$d %2$s</string>
     <string name="settings_buffer_size_summary">بڑے بفر استحکام کو بہتر بناتے ہیں لیکن زیادہ میموری استعمال کرتے ہیں۔</string>
     <string name="mb_format">%1$d %2$s</string>
+
+    <string name="settings_language_title">ایپ کی زبان</string>
+    <string name="settings_language_summary">ایپلیکیشن کے لیے زبان منتخب کریں</string>
+    <string name="language_select_title">زبان منتخب کریں</string>
+    <string name="language_show_all">سب دکھائیں</string>
 </resources>

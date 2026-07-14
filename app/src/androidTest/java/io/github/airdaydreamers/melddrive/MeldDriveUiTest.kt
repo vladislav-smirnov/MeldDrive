@@ -3,7 +3,6 @@ package io.github.airdaydreamers.melddrive
 import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -154,7 +153,7 @@ class MeldDriveUiTest {
     @Test
     fun testAddSmbServerWithCredentials() {
         // Open the drawer
-        composeTestRule.onNodeWithContentDescription("Menu").performClick()
+        composeTestRule.onNodeWithTag("drawer_button").performClick()
 
         // Click Add Storage
         composeTestRule.onNodeWithTag("sidebar_item_Add Storage").performClick()
@@ -189,7 +188,7 @@ class MeldDriveUiTest {
     @Test
     fun testAddSmbServerAnonymous() {
         // Open the drawer
-        composeTestRule.onNodeWithContentDescription("Menu").performClick()
+        composeTestRule.onNodeWithTag("drawer_button").performClick()
 
         // Click Add Storage
         composeTestRule.onNodeWithTag("sidebar_item_Add Storage").performClick()
@@ -233,7 +232,7 @@ class MeldDriveUiTest {
         remoteServerDao.insertServer(testServer)
 
         // Open drawer
-        composeTestRule.onNodeWithContentDescription("Menu").performClick()
+        composeTestRule.onNodeWithTag("drawer_button").performClick()
 
         // Wait for the sidebar item to be displayed (as Flow emission might be async)
         composeTestRule.waitUntil(5000) {
@@ -287,7 +286,7 @@ class MeldDriveUiTest {
         composeTestRule.onNodeWithTag("buffer_size_slider").performScrollTo().assertIsDisplayed()
 
         // Click on back button to return to File Manager
-        composeTestRule.onNodeWithContentDescription("Back").performClick()
+        composeTestRule.onNodeWithTag("back_button").performClick()
 
         // Verify navigated back
         composeTestRule.onNodeWithTag("search_button").assertIsDisplayed()

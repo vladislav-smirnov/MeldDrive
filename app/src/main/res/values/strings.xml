@@ -18,7 +18,7 @@
     <string name="content_desc_toggle_view">Toggle View</string>
     <string name="content_desc_settings">Settings</string>
     <string name="content_desc_back">Back</string>
-    <string name="search_placeholder">Search files...</string>
+    <string name="search_placeholder">Search files…</string>
     <string name="content_desc_clear">Clear</string>
     <string name="internal_storage">Internal Storage</string>
     <string name="root">Root</string>
@@ -60,4 +60,9 @@
     <string name="settings_buffer_size_title">Buffer Size: %1$d <xliff:g id="mb">%2$s</xliff:g></string>
     <string name="settings_buffer_size_summary">Larger buffers improve stability but use more memory.</string>
     <string name="mb_format">%1$d <xliff:g id="mb">%2$s</xliff:g></string>
+
+    <string name="settings_language_title">App Language</string>
+    <string name="settings_language_summary">Choose the language for the application</string>
+    <string name="language_select_title">Select Language</string>
+    <string name="language_show_all">Show All</string>
 </resources>

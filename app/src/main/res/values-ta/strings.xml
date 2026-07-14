@@ -9,7 +9,7 @@
     <string name="content_desc_toggle_view">காட்சியை மாற்று</string>
     <string name="content_desc_settings">அமைப்புகள்</string>
     <string name="content_desc_back">பின்னால்</string>
-    <string name="search_placeholder">கோப்புகளைத் தேடு...</string>
+    <string name="search_placeholder">கோப்புகளைத் தேடு…</string>
     <string name="content_desc_clear">அழி</string>
     <string name="internal_storage">உள் சேமிப்பு</string>
     <string name="root">ரூட்</string>
@@ -45,4 +45,9 @@
     <string name="settings_buffer_size_title">பஃபர் அளவு: %1$d %2$s</string>
     <string name="settings_buffer_size_summary">பெரிய பஃபர்கள் நிலைத்தன்மையை மேம்படுத்துகின்றன ஆனால் அதிக நினைவகத்தைப் பயன்படுத்துகின்றன.</string>
     <string name="mb_format">%1$d %2$s</string>
+
+    <string name="settings_language_title">பயன்பாட்டு மொழி</string>
+    <string name="settings_language_summary">பயன்பாட்டிற்கான மொழியைத் தேர்வுசெய்க</string>
+    <string name="language_select_title">மொழியைத் தேர்ந்தெடு</string>
+    <string name="language_show_all">அனைத்தையும் காட்டு</string>
 </resources>

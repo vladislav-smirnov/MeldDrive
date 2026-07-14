@@ -9,7 +9,7 @@
     <string name="content_desc_toggle_view">Comută vizualizarea</string>
     <string name="content_desc_settings">Setări</string>
     <string name="content_desc_back">Înapoi</string>
-    <string name="search_placeholder">Caută fișiere...</string>
+    <string name="search_placeholder">Caută fișiere…</string>
     <string name="content_desc_clear">Șterge</string>
     <string name="internal_storage">Stocare internă</string>
     <string name="root">Rădăcină</string>
@@ -45,4 +45,9 @@
     <string name="settings_buffer_size_title">Dimensiune tampon: %1$d %2$s</string>
     <string name="settings_buffer_size_summary">Tampoanele mai mari îmbunătățesc stabilitatea, dar consumă mai multă memorie.</string>
     <string name="mb_format">%1$d %2$s</string>
+
+    <string name="settings_language_title">Limba aplicației</string>
+    <string name="settings_language_summary">Alegeți limba pentru aplicație</string>
+    <string name="language_select_title">Selectați limba</string>
+    <string name="language_show_all">Arată tot</string>
 </resources>

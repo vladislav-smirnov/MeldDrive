@@ -9,7 +9,7 @@
     <string name="content_desc_toggle_view">Chuyển đổi chế độ xem</string>
     <string name="content_desc_settings">Cài đặt</string>
     <string name="content_desc_back">Quay lại</string>
-    <string name="search_placeholder">Tìm kiếm tệp...</string>
+    <string name="search_placeholder">Tìm kiếm tệp…</string>
     <string name="content_desc_clear">Xóa</string>
     <string name="internal_storage">Bộ nhớ trong</string>
     <string name="root">Gốc</string>
@@ -45,4 +45,9 @@
     <string name="settings_buffer_size_title">Kích thước bộ đệm: %1$d %2$s</string>
     <string name="settings_buffer_size_summary">Bộ đệm lớn hơn giúp tăng tính ổn định nhưng tốn nhiều bộ nhớ hơn.</string>
     <string name="mb_format">%1$d %2$s</string>
+
+    <string name="settings_language_title">Ngôn ngữ ứng dụng</string>
+    <string name="settings_language_summary">Chọn ngôn ngữ cho ứng dụng</string>
+    <string name="language_select_title">Chọn ngôn ngữ</string>
+    <string name="language_show_all">Hiển thị tất cả</string>
 </resources>
