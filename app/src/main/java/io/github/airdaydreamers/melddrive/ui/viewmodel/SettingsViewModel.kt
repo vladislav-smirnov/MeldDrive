@@ -2,6 +2,7 @@ package io.github.airdaydreamers.melddrive.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.airdaydreamers.melddrive.data.storage.SettingsManager
 import io.github.airdaydreamers.melddrive.ui.mvi.SettingsIntent
 import io.github.airdaydreamers.melddrive.ui.mvi.SettingsState
@@ -10,8 +11,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class SettingsViewModel(private val settingsManager: SettingsManager) : ViewModel() {
+@HiltViewModel
+class SettingsViewModel @Inject constructor(private val settingsManager: SettingsManager) : ViewModel() {
 
     val state: StateFlow<SettingsState> = combine(
         settingsManager.bufferingEnabled,

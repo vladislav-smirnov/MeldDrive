@@ -4,6 +4,7 @@ import io.gitlab.arturbosch.detekt.Detekt
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.kotlin.compose) apply false
+    alias(libs.plugins.hilt) apply false
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.detekt)
     alias(libs.plugins.spotless)
@@ -18,11 +19,14 @@ allprojects {
         detekt {
             buildUponDefaultConfig = true
             parallel = true
-            autoCorrect = true
+            autoCorrect = false
             config.setFrom(files("$rootDir/config/detekt/detekt.yml"))
         }
 
         tasks.withType<Detekt>().configureEach {
+            exclude("**/test/**")
+            exclude("**/androidTest/**")
+
             reports {
                 ignoreFailures = false
                 html.required.set(true) // observe findings in your browser with structure and code snippets
@@ -41,6 +45,7 @@ allprojects {
                 target("**/*.kt")
                 targetExclude("**/build/**/*.kt")
                 ktlint("1.8.0")
+                    .setEditorConfigPath("$rootDir/.editorconfig")
                     .editorConfigOverride(
                         mapOf(
                             "android" to true,
@@ -50,6 +55,7 @@ allprojects {
                             "ktlint_standard_function-naming" to "disabled",
                             "ktlint_standard_property-naming" to "disabled",
                             "ktlint_standard_package-name" to "disabled",
+                            "ktlint_standard_no-unused-imports" to "enabled",
                         ),
                     )
             }

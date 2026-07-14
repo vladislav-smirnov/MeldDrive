@@ -5,6 +5,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
@@ -22,7 +25,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.airdaydreamers.melddrive.data.model.FileItem
+import io.github.airdaydreamers.melddrive.data.model.SidebarItem
 import io.github.airdaydreamers.melddrive.data.model.SidebarItemType
 import io.github.airdaydreamers.melddrive.data.model.StorageType
 import io.github.airdaydreamers.melddrive.ui.components.AdaptiveNavigation.NavigationType
@@ -35,18 +42,19 @@ import io.github.airdaydreamers.melddrive.ui.components.PermanentDrawerContent
 import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerEffect
 import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerIntent
 import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerState
+import io.github.airdaydreamers.melddrive.ui.theme.MeldDriveTheme
 import io.github.airdaydreamers.melddrive.ui.viewmodel.FileManagerViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @Composable
 fun FileManagerScreen(
-    viewModel: FileManagerViewModel,
     navigationType: NavigationType,
     onOpenFile: (FileManagerEffect.OpenFileExternally) -> Unit,
     onShowToast: (String) -> Unit,
     onNavigateToAddStorage: () -> Unit,
     onNavigateToSettings: () -> Unit,
+    viewModel: FileManagerViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -222,7 +230,7 @@ private fun PermanentDrawerLayout(state: FileManagerState, currentServerName: St
     }
 }
 
-private fun handleSidebarItemClick(item: io.github.airdaydreamers.melddrive.data.model.SidebarItem, onIntent: (FileManagerIntent) -> Unit) {
+private fun handleSidebarItemClick(item: SidebarItem, onIntent: (FileManagerIntent) -> Unit) {
     if (item.type == SidebarItemType.ADD_STORAGE) {
         onIntent(FileManagerIntent.NavigateToAddStorage)
     } else {
@@ -298,6 +306,36 @@ private fun FileListView(state: FileManagerState, onIntent: (FileManagerIntent) 
             selectedFiles = state.selectedFiles,
             onFileClick = { onIntent(FileManagerIntent.OpenFile(it)) },
             onFileLongClick = { onIntent(FileManagerIntent.SelectFile(it.path)) },
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun FileManagerScreenPreview() {
+    val mockFiles = listOf(
+        FileItem(path = "/Documents", name = "Documents", isDirectory = true),
+        FileItem(path = "/Downloads", name = "Downloads", isDirectory = true),
+        FileItem(path = "/photo.jpg", name = "photo.jpg", isDirectory = false, size = 1024 * 1024),
+        FileItem(path = "/report.pdf", name = "report.pdf", isDirectory = false, size = 512 * 1024),
+    )
+
+    val mockSidebarItems = listOf(
+        SidebarItem("home", "Home", "/", SidebarItemType.SYSTEM_FOLDER, Icons.Default.Home),
+        SidebarItem("remote_1", "SMB Server", "", SidebarItemType.REMOTE_SERVER, Icons.Default.Storage, 1),
+    )
+
+    val state = FileManagerState(
+        currentPath = "/storage/emulated/0",
+        files = mockFiles,
+        sidebarItems = mockSidebarItems,
+    )
+
+    MeldDriveTheme(dynamicColor = false) {
+        FileManagerContent(
+            state = state,
+            navigationType = NavigationType.DRAWER,
+            onIntent = {},
         )
     }
 }

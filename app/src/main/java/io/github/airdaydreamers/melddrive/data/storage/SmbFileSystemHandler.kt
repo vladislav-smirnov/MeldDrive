@@ -43,37 +43,45 @@ class SmbFileSystemHandler(private val server: RemoteServer) : StorageSource {
 
     override suspend fun listFiles(path: String): List<FileItem> = useSession { session ->
         if (path.isEmpty()) {
-            val transport: RPCTransport = SMBTransportFactories.SRVSVC.getTransport(session)
-            val serverService = ServerService(transport)
-            val shares: List<NetShareInfo0> = serverService.shares0
-            shares.filter {
-                !it.netName.endsWith("$") && it.netName != "IPC$"
-            }.map { share ->
+            listSharesFromRoot(session)
+        } else {
+            listFilesInShare(session, path)
+        }
+    }
+
+    private suspend fun listSharesFromRoot(session: Session): List<FileItem> = withContext(Dispatchers.IO) {
+        val transport: RPCTransport = SMBTransportFactories.SRVSVC.getTransport(session)
+        val serverService = ServerService(transport)
+        val shares: List<NetShareInfo0> = serverService.shares0
+        return@withContext shares.filter {
+            !it.netName.endsWith("$") && it.netName != "IPC$"
+        }.map { share ->
+            FileItem(
+                path = share.netName,
+                name = share.netName,
+                isDirectory = true,
+                storageType = StorageType.SMB,
+            )
+        }
+    }
+
+    private suspend fun listFilesInShare(session: Session, path: String): List<FileItem> = withContext(Dispatchers.IO) {
+        val parts = path.split("/", limit = 2)
+        val shareName = parts[0]
+        val relativePath = if (parts.size > 1) parts[1] else ""
+
+        return@withContext (session.connectShare(shareName) as DiskShare).use { share ->
+            share.list(relativePath).map { info ->
+                val isDir = (info.fileAttributes and FileAttributes.FILE_ATTRIBUTE_DIRECTORY.value) != 0L
                 FileItem(
-                    path = share.netName,
-                    name = share.netName,
-                    isDirectory = true,
+                    path = "$shareName/${if (relativePath.isEmpty()) "" else "$relativePath/"}${info.fileName}",
+                    name = info.fileName,
+                    isDirectory = isDir,
+                    size = if (isDir) 0 else info.endOfFile,
+                    lastModified = info.changeTime.toEpochMillis(),
                     storageType = StorageType.SMB,
                 )
-            }
-        } else {
-            val parts = path.split("/", limit = 2)
-            val shareName = parts[0]
-            val relativePath = if (parts.size > 1) parts[1] else ""
-
-            (session.connectShare(shareName) as DiskShare).use { share ->
-                share.list(relativePath).map { info ->
-                    val isDir = (info.fileAttributes and FileAttributes.FILE_ATTRIBUTE_DIRECTORY.value) != 0L
-                    FileItem(
-                        path = "$shareName/${if (relativePath.isEmpty()) "" else "$relativePath/"}${info.fileName}",
-                        name = info.fileName,
-                        isDirectory = isDir,
-                        size = if (isDir) 0 else info.endOfFile,
-                        lastModified = info.changeTime.toEpochMillis(),
-                        storageType = StorageType.SMB,
-                    )
-                }.filter { it.name != "." && it.name != ".." }
-            }
+            }.filter { it.name != "." && it.name != ".." }
         }
     }
 
@@ -205,15 +213,13 @@ class SmbFileSystemHandler(private val server: RemoteServer) : StorageSource {
     }
 
     private fun recursiveSearch(share: DiskShare, shareName: String, relativePath: String, query: String, result: MutableList<FileItem>) {
-        share.list(relativePath).forEach { info ->
-            if (info.fileName == "." || info.fileName == "..") return@forEach
-
-            val currentRelativePath = if (relativePath.isEmpty()) info.fileName else "$relativePath/${info.fileName}"
+        share.list(relativePath).filter { it.fileName != "." && it.fileName != ".." }.forEach { info ->
+            val currentPath = if (relativePath.isEmpty()) info.fileName else "$relativePath/${info.fileName}"
+            val isDir = (info.fileAttributes and FileAttributes.FILE_ATTRIBUTE_DIRECTORY.value) != 0L
             if (info.fileName.contains(query, ignoreCase = true)) {
-                val isDir = (info.fileAttributes and FileAttributes.FILE_ATTRIBUTE_DIRECTORY.value) != 0L
                 result.add(
                     FileItem(
-                        path = "$shareName/$currentRelativePath",
+                        path = "$shareName/$currentPath",
                         name = info.fileName,
                         isDirectory = isDir,
                         size = if (isDir) 0 else info.endOfFile,
@@ -222,11 +228,7 @@ class SmbFileSystemHandler(private val server: RemoteServer) : StorageSource {
                     ),
                 )
             }
-
-            val isDir = (info.fileAttributes and FileAttributes.FILE_ATTRIBUTE_DIRECTORY.value) != 0L
-            if (isDir) {
-                recursiveSearch(share, shareName, currentRelativePath, query, result)
-            }
+            if (isDir) recursiveSearch(share, shareName, currentPath, query, result)
         }
     }
 }

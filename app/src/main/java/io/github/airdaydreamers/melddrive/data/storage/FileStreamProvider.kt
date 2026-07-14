@@ -12,12 +12,13 @@ import android.os.storage.StorageManager
 import android.system.ErrnoException
 import android.system.OsConstants
 import android.util.LruCache
-import io.github.airdaydreamers.melddrive.data.db.AppDatabase
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
 import io.github.airdaydreamers.melddrive.data.model.MeldDriveException
 import io.github.airdaydreamers.melddrive.data.model.StorageType
 import io.github.airdaydreamers.melddrive.data.repository.FileRepository
-import io.github.airdaydreamers.melddrive.data.security.CredentialStorage
-import io.github.airdaydreamers.melddrive.data.security.SecurityManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -35,16 +36,23 @@ import java.util.concurrent.ConcurrentHashMap
 
 class FileStreamProvider : ContentProvider() {
 
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    interface FileStreamProviderEntryPoint {
+        fun fileRepository(): FileRepository
+        fun settingsManager(): SettingsManager
+    }
+
     private lateinit var repository: FileRepository
+    private lateinit var settingsManager: SettingsManager
     private lateinit var handlerThread: HandlerThread
     private lateinit var handler: Handler
 
     override fun onCreate(): Boolean {
         val context = context ?: return false
-        val database = AppDatabase.getDatabase(context)
-        val securityManager = SecurityManager(context)
-        val credentialStorage = CredentialStorage(context, securityManager)
-        repository = FileRepository(database.remoteServerDao(), credentialStorage)
+        val entryPoint = EntryPointAccessors.fromApplication(context, FileStreamProviderEntryPoint::class.java)
+        repository = entryPoint.fileRepository()
+        settingsManager = entryPoint.settingsManager()
         handlerThread = HandlerThread("FileStreamProviderThread")
         handlerThread.start()
         handler = Handler(handlerThread.looper)
@@ -72,7 +80,6 @@ class FileStreamProvider : ContentProvider() {
         val serverId = segments[1].toLong().let { if (it == -1L) null else it }
         val filePath = segments.subList(2, segments.size).joinToString("/")
 
-        val settingsManager = SettingsManager(context ?: throw FileNotFoundException("Context not found"))
         val bufferingEnabled = runBlocking { settingsManager.bufferingEnabled.first() }
         val bufferSizeMb = runBlocking { settingsManager.bufferSizeMb.first() }
 
@@ -97,7 +104,7 @@ class FileStreamProvider : ContentProvider() {
                 ),
                 handler,
             )
-        } catch (ignored: IOException) {
+        } catch (_: IOException) {
             throw FileNotFoundException("Failed to open proxy file descriptor")
         }
     }
@@ -108,7 +115,7 @@ class FileStreamProvider : ContentProvider() {
         private val storageType: StorageType,
         private val serverId: Long?,
         private val size: Long,
-        private val bufferingEnabled: Boolean,
+        bufferingEnabled: Boolean,
         private val bufferSizeMb: Int,
     ) : ProxyFileDescriptorCallback() {
 
@@ -136,9 +143,9 @@ class FileStreamProvider : ContentProvider() {
                 } else {
                     readFromRepository(offset, size, data)
                 }
-            } catch (ignored: IOException) {
+            } catch (_: IOException) {
                 throw ErrnoException("onRead", OsConstants.EIO)
-            } catch (ignored: MeldDriveException) {
+            } catch (_: MeldDriveException) {
                 throw ErrnoException("onRead", OsConstants.EIO)
             }
         }

@@ -222,7 +222,12 @@ private fun getBreadcrumbItems(currentPath: String, storageType: StorageType, se
 
 private fun getLocalBreadcrumbs(currentPath: String): List<Pair<String, String>> {
     val items = mutableListOf<Pair<String, String>>()
-    val rootPath = Environment.getExternalStorageDirectory().absolutePath
+    val rootPath = try {
+        Environment.getExternalStorageDirectory().absolutePath
+    } catch (_: Exception) {
+        // Fallback for preview mode or when system services are unavailable
+        "/storage/emulated/0"
+    }
     items.add("Internal Storage" to rootPath)
 
     if (currentPath.startsWith(rootPath)) {

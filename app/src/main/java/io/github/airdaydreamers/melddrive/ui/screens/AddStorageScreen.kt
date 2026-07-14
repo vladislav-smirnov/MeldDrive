@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageEffect
 import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageIntent
@@ -39,7 +40,7 @@ import io.github.airdaydreamers.melddrive.ui.viewmodel.AddStorageViewModel
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
-fun AddStorageScreen(viewModel: AddStorageViewModel, onBack: () -> Unit, onSuccess: () -> Unit) {
+fun AddStorageScreen(onBack: () -> Unit, onSuccess: () -> Unit, viewModel: AddStorageViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
