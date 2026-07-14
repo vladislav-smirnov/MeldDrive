@@ -52,6 +52,12 @@ android {
     buildFeatures {
         compose = true
     }
+    testOptions {
+        unitTests.all {
+            it.useJUnitPlatform()
+            it.jvmArgs("-Xshare:off")
+        }
+    }
 }
 
 kotlin {
@@ -76,6 +82,7 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(libs.smbj)
     implementation(libs.smbj.rpc)
+    implementation(libs.slf4j.api)
     implementation(libs.tink.android)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.compose.material3)
@@ -89,6 +96,17 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     testImplementation(libs.junit)
+    testImplementation(libs.junit.jupiter.api)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
+    testRuntimeOnly(libs.junit.vintage.engine)
+    testImplementation(libs.mockk)
+    testImplementation(libs.turbine)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
+    testRuntimeOnly(libs.slf4j.simple)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.test.core.ktx)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)

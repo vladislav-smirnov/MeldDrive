@@ -6,8 +6,11 @@ import io.github.airdaydreamers.melddrive.data.security.CredentialStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class ServerRepository(private val remoteServerDao: RemoteServerDao, private val credentialStorage: CredentialStorage) {
+@Singleton
+class ServerRepository @Inject constructor(private val remoteServerDao: RemoteServerDao, private val credentialStorage: CredentialStorage) {
     fun getRemoteServers(): Flow<List<RemoteServer>> = remoteServerDao.getAllServers()
 
     suspend fun addRemoteServer(server: RemoteServer, password: String?) = withContext(Dispatchers.IO) {

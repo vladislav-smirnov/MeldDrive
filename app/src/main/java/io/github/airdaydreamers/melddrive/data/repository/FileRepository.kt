@@ -10,11 +10,19 @@ import io.github.airdaydreamers.melddrive.data.storage.SmbFileSystemHandler
 import io.github.airdaydreamers.melddrive.data.storage.StorageSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.concurrent.ConcurrentHashMap
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class FileRepository(private val remoteServerDao: RemoteServerDao, private val credentialStorage: CredentialStorage) {
+@Singleton
+class FileRepository @Inject constructor(
+    private val remoteServerDao: RemoteServerDao,
+    private val credentialStorage: CredentialStorage,
+    private val localHandler: LocalFileSystemHandler,
+    private val smbHandlerFactory: SmbFileSystemHandler.Factory,
+) {
 
-    private val localHandler = LocalFileSystemHandler()
-    private val smbHandlers = mutableMapOf<Long, SmbFileSystemHandler>()
+    private val smbHandlers = ConcurrentHashMap<Long, StorageSource>()
 
     fun clearHandler(serverId: Long) {
         smbHandlers.remove(serverId)
@@ -41,7 +49,7 @@ class FileRepository(private val remoteServerDao: RemoteServerDao, private val c
                         }
 
                         val serverWithCredentials = server.copy(username = username, password = password)
-                        SmbFileSystemHandler(serverWithCredentials)
+                        smbHandlerFactory.create(serverWithCredentials)
                     }
                 } ?: throw StorageException("Server ID required for SMB")
             }
