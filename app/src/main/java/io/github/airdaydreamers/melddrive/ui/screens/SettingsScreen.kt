@@ -1,7 +1,12 @@
 package io.github.airdaydreamers.melddrive.ui.screens
 
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -10,15 +15,37 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.airdaydreamers.melddrive.ui.mvi.SettingsIntent
+import io.github.airdaydreamers.melddrive.ui.mvi.SettingsState
+import io.github.airdaydreamers.melddrive.ui.viewmodel.SettingsViewModel
+
+private const val MIN_BUFFER_MB = 8f
+private const val MAX_BUFFER_MB = 128f
+private const val BUFFER_STEPS = 14
+
+@Composable
+fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    SettingsContent(
+        state = state,
+        onIntent = viewModel::onIntent,
+        onBack = onBack,
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit) {
+fun SettingsContent(state: SettingsState, onIntent: (SettingsIntent) -> Unit, onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -31,13 +58,86 @@ fun SettingsScreen(onBack: () -> Unit) {
             )
         },
     ) { padding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
-            contentAlignment = Alignment.Center,
+                .padding(padding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Top,
         ) {
-            Text("Coming Soon", style = MaterialTheme.typography.headlineMedium)
+            BufferingToggleSection(
+                bufferingEnabled = state.bufferingEnabled,
+                onCheckedChange = { onIntent(SettingsIntent.SetBufferingEnabled(it)) },
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            BufferSizeSection(
+                bufferingEnabled = state.bufferingEnabled,
+                bufferSizeMb = state.bufferSizeMb,
+                onValueChange = { onIntent(SettingsIntent.SetBufferSizeMb(it)) },
+            )
         }
+    }
+}
+
+@Composable
+fun BufferingToggleSection(bufferingEnabled: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "Enable SMB Buffering",
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Text(
+                text = "Prefetch next chunks in parallel when playing/reading SMB files",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Switch(
+            checked = bufferingEnabled,
+            onCheckedChange = onCheckedChange,
+        )
+    }
+}
+
+@Composable
+fun BufferSizeSection(bufferingEnabled: Boolean, bufferSizeMb: Int, onValueChange: (Int) -> Unit) {
+    if (bufferingEnabled) {
+        Text(
+            text = "Buffer Size: $bufferSizeMb MB",
+            style = MaterialTheme.typography.titleMedium,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Slider(
+            value = bufferSizeMb.toFloat(),
+            onValueChange = { onValueChange(it.toInt()) },
+            valueRange = MIN_BUFFER_MB..MAX_BUFFER_MB,
+            steps = BUFFER_STEPS,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text("8 MB", style = MaterialTheme.typography.bodySmall)
+            Text("128 MB", style = MaterialTheme.typography.bodySmall)
+        }
+    } else {
+        Text(
+            text = "Buffer Size: Disabled",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = "Enable SMB Buffering to configure buffer size",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }

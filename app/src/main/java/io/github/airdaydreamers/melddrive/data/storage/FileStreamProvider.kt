@@ -11,15 +11,27 @@ import android.os.ProxyFileDescriptorCallback
 import android.os.storage.StorageManager
 import android.system.ErrnoException
 import android.system.OsConstants
+import android.util.LruCache
 import io.github.airdaydreamers.melddrive.data.db.AppDatabase
 import io.github.airdaydreamers.melddrive.data.model.MeldDriveException
 import io.github.airdaydreamers.melddrive.data.model.StorageType
 import io.github.airdaydreamers.melddrive.data.repository.FileRepository
 import io.github.airdaydreamers.melddrive.data.security.CredentialStorage
 import io.github.airdaydreamers.melddrive.data.security.SecurityManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import java.io.FileNotFoundException
 import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
 
 class FileStreamProvider : ContentProvider() {
 
@@ -60,6 +72,10 @@ class FileStreamProvider : ContentProvider() {
         val serverId = segments[1].toLong().let { if (it == -1L) null else it }
         val filePath = segments.subList(2, segments.size).joinToString("/")
 
+        val settingsManager = SettingsManager(context ?: throw FileNotFoundException("Context not found"))
+        val bufferingEnabled = runBlocking { settingsManager.bufferingEnabled.first() }
+        val bufferSizeMb = runBlocking { settingsManager.bufferSizeMb.first() }
+
         val fileSize = runBlocking {
             repository.getFileSize(filePath, storageType, serverId)
         }
@@ -70,7 +86,15 @@ class FileStreamProvider : ContentProvider() {
         return try {
             storageManager.openProxyFileDescriptor(
                 ParcelFileDescriptor.parseMode(mode),
-                FileStreamCallback(repository, filePath, storageType, serverId, fileSize),
+                FileStreamCallback(
+                    repository = repository,
+                    path = filePath,
+                    storageType = storageType,
+                    serverId = serverId,
+                    size = fileSize,
+                    bufferingEnabled = bufferingEnabled,
+                    bufferSizeMb = bufferSizeMb,
+                ),
                 handler,
             )
         } catch (ignored: IOException) {
@@ -84,11 +108,22 @@ class FileStreamProvider : ContentProvider() {
         private val storageType: StorageType,
         private val serverId: Long?,
         private val size: Long,
+        private val bufferingEnabled: Boolean,
+        private val bufferSizeMb: Int,
     ) : ProxyFileDescriptorCallback() {
 
         private var buffer: ByteArray? = null
         private var bufferOffset: Long = -1L
         private val bufferSize = DEFAULT_BUFFER_SIZE
+
+        private val isBufferActive = bufferingEnabled && storageType == StorageType.SMB
+        private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+        private val prefetchSemaphore = Semaphore(MAX_CONCURRENT_PREFETCH)
+        private val activeDownloads = ConcurrentHashMap<Long, Deferred<ByteArray>>()
+
+        private val cache = object : LruCache<Long, ByteArray>(bufferSizeMb) {
+            override fun sizeOf(key: Long, value: ByteArray): Int = 1
+        }
 
         override fun onGetSize(): Long = size
 
@@ -96,12 +131,137 @@ class FileStreamProvider : ContentProvider() {
             if (size <= 0) return 0
 
             return try {
-                readFromRepository(offset, size, data)
+                if (isBufferActive) {
+                    readWithBuffering(offset, size, data)
+                } else {
+                    readFromRepository(offset, size, data)
+                }
             } catch (ignored: IOException) {
                 throw ErrnoException("onRead", OsConstants.EIO)
             } catch (ignored: MeldDriveException) {
                 throw ErrnoException("onRead", OsConstants.EIO)
             }
+        }
+
+        private fun readWithBuffering(offset: Long, size: Int, data: ByteArray): Int {
+            val fileTotalSize = this@FileStreamCallback.size
+            if (offset >= fileTotalSize) return 0
+
+            val startChunk = offset / CHUNK_SIZE
+            val endChunk = (offset + size - 1) / CHUNK_SIZE
+
+            var totalBytesRead = 0
+
+            triggerPrefetch(startChunk)
+
+            for (chunkIndex in startChunk..endChunk) {
+                val chunkData = getChunk(chunkIndex)
+                if (chunkData.isEmpty()) {
+                    break
+                }
+
+                val chunkStartOffset = chunkIndex * CHUNK_SIZE
+                val readStartOffset = Math.max(offset, chunkStartOffset)
+                val readEndOffset = Math.min(offset + size, chunkStartOffset + chunkData.size)
+                val copyLength = (readEndOffset - readStartOffset).toInt()
+
+                if (copyLength > 0) {
+                    val startInChunk = (readStartOffset - chunkStartOffset).toInt()
+                    val startInOutput = (readStartOffset - offset).toInt()
+                    System.arraycopy(chunkData, startInChunk, data, startInOutput, copyLength)
+                    totalBytesRead += copyLength
+                }
+            }
+
+            return totalBytesRead
+        }
+
+        private fun getChunk(chunkIndex: Long): ByteArray {
+            val cached = synchronized(cache) { cache.get(chunkIndex) }
+            if (cached != null) {
+                return cached
+            }
+
+            val resultDeferred = synchronized(activeDownloads) {
+                activeDownloads[chunkIndex] ?: activeDownloads.getOrPut(chunkIndex) {
+                    scope.async {
+                        try {
+                            performDownload(chunkIndex)
+                        } finally {
+                            synchronized(activeDownloads) {
+                                activeDownloads.remove(chunkIndex)
+                            }
+                        }
+                    }
+                }
+            }
+
+            return runBlocking { resultDeferred.await() }
+        }
+
+        private fun prefetchChunk(chunkIndex: Long) {
+            synchronized(activeDownloads) {
+                if (activeDownloads.containsKey(chunkIndex)) return
+                val isCached = synchronized(cache) { cache.get(chunkIndex) != null }
+                if (isCached) return
+
+                val deferred = scope.async {
+                    try {
+                        prefetchSemaphore.withPermit {
+                            val stillCached = synchronized(cache) { cache.get(chunkIndex) != null }
+                            if (!stillCached) {
+                                performDownload(chunkIndex)
+                            } else {
+                                ByteArray(0)
+                            }
+                        }
+                    } finally {
+                        synchronized(activeDownloads) {
+                            activeDownloads.remove(chunkIndex)
+                        }
+                    }
+                }
+                activeDownloads[chunkIndex] = deferred
+            }
+        }
+
+        private fun triggerPrefetch(currentChunkIndex: Long) {
+            val fileTotalSize = this@FileStreamCallback.size
+            val maxChunksToPrefetch = bufferSizeMb
+
+            scope.launch {
+                for (i in 1..maxChunksToPrefetch) {
+                    val targetChunkIndex = currentChunkIndex + i
+                    val targetOffset = targetChunkIndex * CHUNK_SIZE
+                    if (targetOffset >= fileTotalSize) break
+
+                    prefetchChunk(targetChunkIndex)
+                }
+            }
+        }
+
+        private suspend fun performDownload(chunkIndex: Long): ByteArray {
+            val cached = synchronized(cache) { cache.get(chunkIndex) }
+            if (cached != null) {
+                return cached
+            }
+
+            val chunkOffset = chunkIndex * CHUNK_SIZE
+            val fileTotalSize = this@FileStreamCallback.size
+            val chunkLength = Math.min(CHUNK_SIZE.toLong(), fileTotalSize - chunkOffset).toInt()
+
+            val result = if (chunkLength <= 0) {
+                ByteArray(0)
+            } else {
+                val fetched = repository.readFile(path, chunkOffset, chunkLength, storageType, serverId)
+                if (fetched.isNotEmpty()) {
+                    synchronized(cache) {
+                        cache.put(chunkIndex, fetched)
+                    }
+                }
+                fetched
+            }
+            return result
         }
 
         private fun readFromRepository(offset: Long, size: Int, data: ByteArray): Int {
@@ -138,6 +298,13 @@ class FileStreamProvider : ContentProvider() {
         }
 
         override fun onRelease() {
+            scope.cancel()
+            synchronized(cache) {
+                cache.evictAll()
+            }
+            synchronized(activeDownloads) {
+                activeDownloads.clear()
+            }
             buffer = null
         }
     }
@@ -145,7 +312,9 @@ class FileStreamProvider : ContentProvider() {
     companion object {
         const val AUTHORITY = "io.github.airdaydreamers.melddrive.filestream"
         private const val DEFAULT_BUFFER_SIZE = 1048576 // 1MB
+        const val CHUNK_SIZE = 1048576 // 1MB
         private const val MIN_URI_SEGMENTS = 3
+        private const val MAX_CONCURRENT_PREFETCH = 4
 
         fun buildUri(storageType: StorageType, serverId: Long?, path: String): Uri = Uri.Builder()
             .scheme("content")
