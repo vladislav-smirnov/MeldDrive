@@ -5,15 +5,16 @@ on:
     branches: [ main, master ]
 
 jobs:
+  # Job 1: Build Debug and Release APKs
   build:
-    name: Build and Test
+    name: Build APKs
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: set up JDK 17
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
@@ -22,18 +23,6 @@ jobs:
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-
-      - name: Run Spotless Check
-        run: ./gradlew spotlessCheck
-
-      - name: Run Detekt
-        run: ./gradlew detekt
-
-      - name: Run Lint
-        run: ./gradlew lintDebug
-
-      - name: Run Unit Tests
-        run: ./gradlew testDebugUnitTest
 
       - name: Build Debug APK
         run: ./gradlew assembleDebug
@@ -48,15 +37,125 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-# NOTE: not necessary to upload to avoid issue with available space
-#      - name: Upload Debug APK
-#        uses: actions/upload-artifact@v4
+
+  # Job 2: Unit Tests + Code Coverage
+  unit-tests:
+    name: Unit Tests & Code Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run Unit Tests
+        run: ./gradlew testDebugUnitTest --no-daemon
+
+      - name: Generate Code Coverage Report
+        run: ./gradlew koverHtmlReport --no-daemon
+
+      - name: Verify Code Coverage (30% threshold)
+        run: ./gradlew koverVerify --no-daemon
+
+#      - name: Upload Coverage Reports
+#        uses: codecov/codecov-action@v4
+#        if: always()
 #        with:
-#          name: debug-apk
-#          path: app/build/outputs/apk/debug/*.apk
+#          files: ./app/build/reports/kover/html
+#          flags: unittests
+#          name: codecov-umbrella
+#          fail_ci_if_error: true
+#          token: ${{ secrets.CODECOV_TOKEN }}
 #
-#      - name: Upload Release APK
+#      - name: Archive Code Coverage Results
+#        if: always()
 #        uses: actions/upload-artifact@v4
 #        with:
-#          name: release-apk
-#          path: app/build/outputs/apk/release/*.apk
+#          name: code-coverage-report
+#          path: app/build/reports/kover/html
+
+  # Job 3: Instrumented Tests (Android)
+  instrumented-tests:
+    name: Instrumented Tests
+      # We use Ubuntu because macOS runners consume 10x the GitHub Actions billing minutes
+    runs-on: ubuntu-latest
+
+    steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+
+        # Hardware acceleration (KVM) is required for x86_64 emulators on Linux.
+        # This step enables it on the standard Ubuntu runner.
+        - name: Enable KVM group perms
+          run: |
+              echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+              sudo udevadm control --reload-rules
+              sudo udevadm trigger --name-match=kvm
+
+        - name: Set up JDK
+          uses: actions/setup-java@v4
+          with:
+              distribution: 'zulu'
+              java-version: '17' # Update this to match your project's Java version
+
+        - name: Setup Gradle
+          uses: gradle/actions/setup-gradle@v3
+
+        - name: Run Instrumented Tests
+          uses: reactivecircus/android-emulator-runner@v2
+          with:
+              api-level: 31
+              arch: x86_64
+              target: google_apis
+              disable-animations: true
+              script: ./gradlew connectedAndroidTest
+
+  # Job 4: Code Quality Checks (Lint, Detekt, Spotless)
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run Spotless Check
+        run: ./gradlew spotlessCheck --no-daemon
+
+      - name: Run Detekt
+        run: ./gradlew detekt --no-daemon
+
+      - name: Run Lint
+        run: ./gradlew lintDebug --no-daemon
+
+#      - name: Archive Detekt Report
+#        if: always()
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: detekt-report
+#          path: app/build/reports/detekt/
+#
+#      - name: Upload Detekt SARIF Report to GitHub Code Scanning
+#        if: always()
+#        uses: github/codeql-action/upload-sarif@v3
+#        with:
+#          sarif_file: app/build/reports/detekt/detekt.sarif
