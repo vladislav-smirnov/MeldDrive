@@ -9,6 +9,21 @@ plugins {
     alias(libs.plugins.kover)
 }
 
+// Counts total commits (e.g., 145)
+fun getGitVersionCode(): Int = providers.exec {
+    commandLine("git", "rev-list", "--count", "HEAD")
+    workingDir(rootDir)
+    isIgnoreExitValue = true
+}.standardOutput.asText.map { it.trim().toIntOrNull() ?: 1 }.get()
+
+// Gets the latest tag (e.g., "1.0.4"), or commit hash if no tag exists
+// follow https://semver.org/
+fun getGitVersionName(): String = providers.exec {
+    commandLine("git", "describe", "--tags", "--always")
+    workingDir(rootDir)
+    isIgnoreExitValue = true
+}.standardOutput.asText.map { it.trim().ifEmpty { "1.0.0-dev" } }.get()
+
 android {
     namespace = "io.github.airdaydreamers.melddrive"
     compileSdk = 37
@@ -16,8 +31,8 @@ android {
     defaultConfig {
         applicationId = "io.github.airdaydreamers.melddrive"
         minSdk = 31
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = getGitVersionCode()
+        versionName = getGitVersionName()
 
         testInstrumentationRunner = "io.github.airdaydreamers.melddrive.HiltTestRunner"
     }
@@ -115,7 +130,6 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.hilt.android.testing)
-    kspAndroidTest(libs.hilt.android.compiler)
     androidTestImplementation(libs.mockk.android)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
