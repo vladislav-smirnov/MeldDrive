@@ -4,17 +4,28 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import io.github.airdaydreamers.melddrive.data.repository.FileRepository
 import io.github.airdaydreamers.melddrive.data.repository.ServerRepository
+import io.github.airdaydreamers.melddrive.data.storage.SettingsManager
 
-class ViewModelFactory(private val repository: FileRepository, private val serverRepository: ServerRepository) : ViewModelProvider.Factory {
+class ViewModelFactory(private val repository: FileRepository, private val serverRepository: ServerRepository, private val settingsManager: SettingsManager) :
+    ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(FileManagerViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return FileManagerViewModel(repository, serverRepository) as T
+        @Suppress("UNCHECKED_CAST")
+        return when {
+            modelClass.isAssignableFrom(FileManagerViewModel::class.java) -> {
+                FileManagerViewModel(repository, serverRepository) as T
+            }
+
+            modelClass.isAssignableFrom(AddStorageViewModel::class.java) -> {
+                AddStorageViewModel(serverRepository) as T
+            }
+
+            modelClass.isAssignableFrom(SettingsViewModel::class.java) -> {
+                SettingsViewModel(settingsManager) as T
+            }
+
+            else -> {
+                throw IllegalArgumentException("Unknown ViewModel class")
+            }
         }
-        if (modelClass.isAssignableFrom(AddStorageViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return AddStorageViewModel(serverRepository) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
