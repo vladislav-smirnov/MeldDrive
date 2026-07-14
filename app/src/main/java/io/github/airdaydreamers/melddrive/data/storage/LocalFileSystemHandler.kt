@@ -9,13 +9,14 @@ import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import javax.inject.Inject
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
 
-class LocalFileSystemHandler : StorageSource {
+class LocalFileSystemHandler @Inject constructor() : StorageSource {
     override suspend fun listFiles(path: String): List<FileItem> = withContext(Dispatchers.IO) {
         val nioPath = Paths.get(path)
         if (nioPath.isDirectory()) {

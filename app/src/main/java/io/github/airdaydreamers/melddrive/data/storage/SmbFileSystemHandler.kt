@@ -12,6 +12,9 @@ import com.rapid7.client.dcerpc.mssrvs.ServerService
 import com.rapid7.client.dcerpc.mssrvs.dto.NetShareInfo0
 import com.rapid7.client.dcerpc.transport.RPCTransport
 import com.rapid7.client.dcerpc.transport.SMBTransportFactories
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import io.github.airdaydreamers.melddrive.data.db.RemoteServer
 import io.github.airdaydreamers.melddrive.data.model.FileItem
 import io.github.airdaydreamers.melddrive.data.model.StorageType
@@ -19,9 +22,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.EnumSet
 
-class SmbFileSystemHandler(private val server: RemoteServer) : StorageSource {
+class SmbFileSystemHandler @AssistedInject constructor(@Assisted private val server: RemoteServer, private val client: SMBClient) : StorageSource {
 
-    private val client = SMBClient()
+    @AssistedFactory
+    interface Factory {
+        fun create(server: RemoteServer): SmbFileSystemHandler
+    }
 
     private suspend fun <T> useSession(block: suspend (Session) -> T): T = withContext(Dispatchers.IO) {
         var connection: Connection? = null
