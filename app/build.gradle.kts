@@ -38,6 +38,10 @@ fun getGitVersionName(): String {
     }.get()
 }
 
+base {
+    archivesName.set("MeldDrive-v${getGitVersionName()}-${getGitVersionCode()}")
+}
+
 android {
     namespace = "io.github.airdaydreamers.melddrive"
     compileSdk = 37
