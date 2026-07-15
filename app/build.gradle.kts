@@ -49,6 +49,9 @@ android {
     defaultConfig {
         applicationId = "io.github.airdaydreamers.melddrive"
         minSdk = 31
+        // Need for Quest Appstore publishing
+        //noinspection OldTargetApi
+        targetSdk = 35
         versionCode = getGitVersionCode()
         versionName = getGitVersionName()
 
