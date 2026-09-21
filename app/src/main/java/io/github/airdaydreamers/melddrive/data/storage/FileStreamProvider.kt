@@ -3,11 +3,15 @@ package io.github.airdaydreamers.melddrive.data.storage
 import android.content.ContentProvider
 import android.content.ContentValues
 import android.database.Cursor
+import android.database.MatrixCursor
 import android.net.Uri
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.ParcelFileDescriptor
 import android.os.storage.StorageManager
+import android.provider.MediaStore
+import android.provider.OpenableColumns
+import android.webkit.MimeTypeMap
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
@@ -40,11 +44,55 @@ class FileStreamProvider : ContentProvider() {
         return true
     }
 
-    override fun query(uri: Uri, projection: Array<out String>?, selection: String?, selectionArgs: Array<out String>?, sortOrder: String?): Cursor? = null
+    private fun ensureDependencies(): Boolean {
+        if (!::fileRepository.isInitialized) {
+            val ctx = context?.applicationContext ?: return false
+            val entryPoint = EntryPointAccessors.fromApplication(ctx, FileStreamProviderEntryPoint::class.java)
+            fileRepository = entryPoint.fileRepository()
+            fileSettingsManager = entryPoint.settingsManager()
+        }
+        return ::fileRepository.isInitialized
+    }
+
+    override fun query(uri: Uri, projection: Array<out String>?, selection: String?, selectionArgs: Array<out String>?, sortOrder: String?): Cursor? {
+        val uriInfo = parseUri(uri) ?: return null
+
+        val fileSize = if (ensureDependencies()) {
+            try {
+                runBlocking {
+                    fileRepository.getFileSize(uriInfo.filePath, uriInfo.storageType, uriInfo.serverId)
+                }
+            } catch (_: Exception) {
+                -1L
+            }
+        } else {
+            -1L
+        }
+
+        val cols = projection ?: arrayOf(
+            OpenableColumns.DISPLAY_NAME,
+            OpenableColumns.SIZE,
+        )
+
+        val cursor = MatrixCursor(cols)
+        val row = cursor.newRow()
+
+        for (col in cols) {
+            when (col) {
+                OpenableColumns.DISPLAY_NAME -> row.add(uriInfo.fileName)
+                OpenableColumns.SIZE -> row.add(fileSize)
+                MediaStore.MediaColumns.DATA -> row.add(null)
+                MediaStore.MediaColumns.MIME_TYPE -> row.add(getType(uri))
+                else -> row.add(null)
+            }
+        }
+
+        return cursor
+    }
 
     override fun getType(uri: Uri): String? {
         val path = uri.path?.substringAfterLast(".", "")
-        return if (path.isNullOrEmpty()) "*/*" else android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(path)
+        return if (path.isNullOrEmpty()) "*/*" else MimeTypeMap.getSingleton().getMimeTypeFromExtension(path)
     }
 
     override fun insert(uri: Uri, values: ContentValues?): Uri? = null
@@ -54,25 +102,17 @@ class FileStreamProvider : ContentProvider() {
     override fun update(uri: Uri, values: ContentValues?, selection: String?, selectionArgs: Array<out String>?): Int = 0
 
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor? {
-        if (!::fileRepository.isInitialized) {
-            val ctx = context?.applicationContext ?: throw FileNotFoundException("Context not available")
-            val entryPoint = EntryPointAccessors.fromApplication(ctx, FileStreamProviderEntryPoint::class.java)
-            fileRepository = entryPoint.fileRepository()
-            fileSettingsManager = entryPoint.settingsManager()
+        if (!ensureDependencies()) {
+            throw FileNotFoundException("Dependencies not initialized")
         }
 
-        val segments = uri.pathSegments
-        if (segments.size < MIN_URI_SEGMENTS) throw FileNotFoundException("Invalid URI: $uri")
-
-        val storageType = StorageType.valueOf(segments[0])
-        val serverId = segments[1].toLong().let { if (it == -1L) null else it }
-        val filePath = segments.subList(2, segments.size).joinToString("/")
+        val uriInfo = parseUri(uri) ?: throw FileNotFoundException("Invalid URI: $uri")
 
         val bufferingEnabled = runBlocking { fileSettingsManager.bufferingEnabled.first() }
         val bufferSizeMb = runBlocking { fileSettingsManager.bufferSizeMb.first() }
 
         val fileSize = runBlocking {
-            fileRepository.getFileSize(filePath, storageType, serverId)
+            fileRepository.getFileSize(uriInfo.filePath, uriInfo.storageType, uriInfo.serverId)
         }
 
         val storageManager = context?.getSystemService(StorageManager::class.java)
@@ -83,9 +123,9 @@ class FileStreamProvider : ContentProvider() {
                 ParcelFileDescriptor.parseMode(mode),
                 FileStreamCallback(
                     repository = fileRepository,
-                    path = filePath,
-                    storageType = storageType,
-                    serverId = serverId,
+                    path = uriInfo.filePath,
+                    storageType = uriInfo.storageType,
+                    serverId = uriInfo.serverId,
                     size = fileSize,
                     bufferingEnabled = bufferingEnabled,
                     bufferSizeMb = bufferSizeMb,
@@ -97,9 +137,27 @@ class FileStreamProvider : ContentProvider() {
         }
     }
 
+    private fun parseUri(uri: Uri): StreamUriInfo? {
+        val segments = uri.pathSegments
+        if (segments.size < MIN_URI_SEGMENTS) return null
+
+        val storageType = StorageType.entries.firstOrNull { it.name == segments[SEGMENT_STORAGE_TYPE] }
+        val serverId = segments.getOrNull(SEGMENT_SERVER_ID)?.toLongOrNull()?.let { if (it == -1L) null else it }
+        val filePath = segments.subList(PATH_START_INDEX, segments.size).joinToString("/")
+
+        return storageType?.let { StreamUriInfo(it, serverId, filePath) }
+    }
+
+    private data class StreamUriInfo(val storageType: StorageType, val serverId: Long?, val filePath: String) {
+        val fileName: String get() = filePath.substringAfterLast('/')
+    }
+
     companion object {
         const val AUTHORITY = "io.github.airdaydreamers.melddrive.filestream"
         private const val MIN_URI_SEGMENTS = 3
+        private const val SEGMENT_STORAGE_TYPE = 0
+        private const val SEGMENT_SERVER_ID = 1
+        private const val PATH_START_INDEX = 2
 
         fun buildUri(storageType: StorageType, serverId: Long?, path: String): Uri = Uri.Builder()
             .scheme("content")
