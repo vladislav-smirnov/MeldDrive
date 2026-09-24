@@ -37,6 +37,7 @@ import io.github.airdaydreamers.melddrive.ui.screens.AddStorageScreen
 import io.github.airdaydreamers.melddrive.ui.screens.FileManagerScreen
 import io.github.airdaydreamers.melddrive.ui.screens.SettingsScreen
 import io.github.airdaydreamers.melddrive.ui.theme.MeldDriveTheme
+import timber.log.Timber
 import java.io.File
 import android.provider.Settings as AndroidSettings
 import io.github.airdaydreamers.melddrive.ui.navigation.Settings as MeldDriveSettings
@@ -108,6 +109,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openFile(fileItem: FileItem, serverId: Long? = null) {
+        Timber.i("MainActivity: Opening file path=%s, name=%s, storageType=%s, serverId=%s", fileItem.path, fileItem.name, fileItem.storageType, serverId)
         val uri = if (fileItem.storageType == StorageType.LOCAL) {
             val file = File(fileItem.path)
             FileProvider.getUriForFile(

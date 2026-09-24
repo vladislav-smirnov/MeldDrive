@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.io.IOException
 import javax.inject.Inject
 
@@ -30,6 +31,7 @@ class AddStorageViewModel @Inject constructor(private val serverRepository: Serv
     val effect = _effect.receiveAsFlow()
 
     fun onIntent(intent: AddStorageIntent) {
+        Timber.d("AddStorageViewModel: Handling intent %s", intent::class.simpleName)
         when (intent) {
             is AddStorageIntent.DisplayNameChange -> _state.update { it.copy(displayName = intent.value) }
             is AddStorageIntent.HostChange -> _state.update { it.copy(host = intent.value) }

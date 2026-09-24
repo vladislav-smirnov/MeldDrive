@@ -8,12 +8,14 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import timber.log.Timber
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "credentials")
 
 class CredentialStorage(private val context: Context, private val securityManager: SecurityManager) {
 
     suspend fun saveCredentials(serverId: Long, username: String?, password: String?) {
+        Timber.i("CredentialStorage: Saving credentials for serverId=%d, hasUsername=%b, hasPassword=%b", serverId, username != null, password != null)
         val keyUser = stringPreferencesKey("user_$serverId")
         val keyPass = stringPreferencesKey("pass_$serverId")
         context.dataStore.edit { preferences ->
@@ -53,6 +55,7 @@ class CredentialStorage(private val context: Context, private val securityManage
     }
 
     suspend fun removeCredentials(serverId: Long) {
+        Timber.i("CredentialStorage: Removing credentials for serverId=%d", serverId)
         val keyUser = stringPreferencesKey("user_$serverId")
         val keyPass = stringPreferencesKey("pass_$serverId")
         context.dataStore.edit { preferences ->

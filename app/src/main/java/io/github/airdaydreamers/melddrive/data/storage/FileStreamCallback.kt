@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import timber.log.Timber
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 
@@ -47,6 +48,7 @@ internal class FileStreamCallback(
 
     override fun onRead(offset: Long, size: Int, data: ByteArray): Int {
         if (size <= 0) return 0
+        Timber.d("FileStreamCallback: onRead offset=%d, size=%d, path=%s, buffering=%b", offset, size, path, isBufferActive)
 
         return try {
             if (isBufferActive) {
@@ -54,9 +56,11 @@ internal class FileStreamCallback(
             } else {
                 readFromRepository(offset, size, data)
             }
-        } catch (_: IOException) {
+        } catch (e: IOException) {
+            Timber.e(e, "FileStreamCallback: IOException onRead offset=%d for %s", offset, path)
             throw ErrnoException("onRead", OsConstants.EIO)
-        } catch (_: MeldDriveException) {
+        } catch (e: MeldDriveException) {
+            Timber.e(e, "FileStreamCallback: MeldDriveException onRead offset=%d for %s", offset, path)
             throw ErrnoException("onRead", OsConstants.EIO)
         }
     }
@@ -159,6 +163,7 @@ internal class FileStreamCallback(
     }
 
     private suspend fun performDownload(chunkIndex: Long): ByteArray {
+        Timber.d("FileStreamCallback: Downloading chunk=%d for path=%s", chunkIndex, path)
         val cached = synchronized(cache) { cache.get(chunkIndex) }
         if (cached != null) {
             return cached
@@ -216,6 +221,7 @@ internal class FileStreamCallback(
     }
 
     override fun onRelease() {
+        Timber.i("FileStreamCallback: Releasing callback resources for path=%s", path)
         scope.cancel()
         synchronized(cache) {
             cache.evictAll()

@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import timber.log.Timber
 
 private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
@@ -23,12 +24,14 @@ class SettingsManager(private val context: Context) {
     }
 
     suspend fun setBufferingEnabled(enabled: Boolean) {
+        Timber.i("SettingsManager: Setting bufferingEnabled=%b", enabled)
         context.settingsDataStore.edit { preferences ->
             preferences[KEY_BUFFERING_ENABLED] = enabled
         }
     }
 
     suspend fun setBufferSizeMb(sizeMb: Int) {
+        Timber.i("SettingsManager: Setting bufferSizeMb=%d", sizeMb)
         context.settingsDataStore.edit { preferences ->
             preferences[KEY_BUFFER_SIZE_MB] = sizeMb
         }

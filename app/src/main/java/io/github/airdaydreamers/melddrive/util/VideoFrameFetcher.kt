@@ -21,6 +21,7 @@ import io.github.airdaydreamers.melddrive.data.model.StorageType
 import io.github.airdaydreamers.melddrive.data.model.VideoThumbnailModel
 import io.github.airdaydreamers.melddrive.data.repository.FileRepository
 import io.github.airdaydreamers.melddrive.data.storage.StorageMediaDataSource
+import timber.log.Timber
 import java.io.BufferedOutputStream
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
@@ -34,7 +35,9 @@ class VideoFrameFetcher(
     private val setDataSource: MediaMetadataRetriever.() -> Unit,
 ) : Fetcher {
 
+    @Suppress("TooGenericExceptionCaught")
     override suspend fun fetch(): FetchResult? {
+        Timber.d("VideoFrameFetcher: Starting fetch for cacheKey=%s", cacheKey)
         val cachedResult = checkDiskCache()
         if (cachedResult != null) return cachedResult
 
@@ -47,6 +50,7 @@ class VideoFrameFetcher(
             } ?: extractFrameBitmap(retriever)
 
             if (bitmap != null) {
+                Timber.d("VideoFrameFetcher: Decoded frame (%dx%d) for cacheKey=%s", bitmap.width, bitmap.height, cacheKey)
                 saveToDiskCache(bitmap)
                 ImageFetchResult(
                     image = bitmap.toDrawable(options.context.resources).asImage(),
@@ -54,8 +58,12 @@ class VideoFrameFetcher(
                     dataSource = DataSource.DISK,
                 )
             } else {
+                Timber.w("VideoFrameFetcher: Failed to decode frame for cacheKey=%s", cacheKey)
                 null
             }
+        } catch (e: Exception) {
+            Timber.e(e, "VideoFrameFetcher: Error fetching frame for cacheKey=%s", cacheKey)
+            null
         } finally {
             releaseResources(retriever)
         }
@@ -76,6 +84,7 @@ class VideoFrameFetcher(
         }
 
         return cachedBitmap?.let {
+            Timber.d("VideoFrameFetcher: Disk cache hit for cacheKey=%s", cacheKey)
             ImageFetchResult(
                 image = it.toDrawable(options.context.resources).asImage(),
                 isSampled = false,

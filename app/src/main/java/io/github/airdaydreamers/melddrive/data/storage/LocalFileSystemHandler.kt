@@ -4,6 +4,7 @@ import io.github.airdaydreamers.melddrive.data.model.FileItem
 import io.github.airdaydreamers.melddrive.data.model.StorageType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
@@ -18,6 +19,7 @@ import kotlin.io.path.name
 
 class LocalFileSystemHandler @Inject constructor() : StorageSource {
     override suspend fun listFiles(path: String): List<FileItem> = withContext(Dispatchers.IO) {
+        Timber.d("LocalFileSystemHandler: listFiles path=%s", path)
         val nioPath = Paths.get(path)
         if (nioPath.isDirectory()) {
             nioPath.listDirectoryEntries().map { createFileItem(it) }
@@ -53,6 +55,7 @@ class LocalFileSystemHandler @Inject constructor() : StorageSource {
     }
 
     override suspend fun deleteFile(path: String): Boolean = withContext(Dispatchers.IO) {
+        Timber.i("LocalFileSystemHandler: deleteFile path=%s", path)
         val nioPath = Paths.get(path)
         if (nioPath.isDirectory()) {
             nioPath.toFile().deleteRecursively()
@@ -62,6 +65,7 @@ class LocalFileSystemHandler @Inject constructor() : StorageSource {
     }
 
     override suspend fun renameFile(path: String, newName: String): Boolean = withContext(Dispatchers.IO) {
+        Timber.i("LocalFileSystemHandler: renameFile path=%s, newName=%s", path, newName)
         val nioPath = Paths.get(path)
         val target = nioPath.resolveSibling(newName)
         Files.move(nioPath, target)
@@ -69,6 +73,7 @@ class LocalFileSystemHandler @Inject constructor() : StorageSource {
     }
 
     override suspend fun createFolder(parentPath: String, name: String): Boolean = withContext(Dispatchers.IO) {
+        Timber.i("LocalFileSystemHandler: createFolder parentPath=%s, name=%s", parentPath, name)
         val parent = Paths.get(parentPath)
         val newFolder = parent.resolve(name)
         if (!newFolder.exists()) {
@@ -98,6 +103,7 @@ class LocalFileSystemHandler @Inject constructor() : StorageSource {
     }
 
     override suspend fun searchFiles(path: String, query: String): List<FileItem> = withContext(Dispatchers.IO) {
+        Timber.d("LocalFileSystemHandler: searchFiles path=%s, query=%s", path, query)
         val root = File(path)
         val result = mutableListOf<FileItem>()
         root.walkTopDown().forEach { file ->

@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.io.File
 import java.io.IOException
 import javax.inject.Inject
@@ -65,6 +66,7 @@ class FileManagerViewModel @Inject constructor(
     }
 
     fun onIntent(intent: FileManagerIntent) {
+        Timber.d("FileManagerViewModel: Handling intent %s", intent::class.simpleName)
         when (intent) {
             is FileManagerIntent.NavigateTo -> {
                 _state.update {

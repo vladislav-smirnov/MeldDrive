@@ -1,6 +1,5 @@
 package io.github.airdaydreamers.melddrive.ui.viewmodel
 
-import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
@@ -15,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -63,7 +63,7 @@ class SettingsViewModel @Inject constructor(private val settingsManager: Setting
 
             is SettingsIntent.SetLanguage -> {
                 val locale = LocaleListCompat.forLanguageTags(intent.languageCode)
-                Log.d("SettingsViewModel", "Setting language to ${intent.languageCode} with locale $locale")
+                Timber.d("SettingsViewModel: Setting language to %s with locale %s", intent.languageCode, locale)
                 AppCompatDelegate.setApplicationLocales(
                     locale,
                 )
