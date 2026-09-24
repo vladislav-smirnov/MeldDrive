@@ -4,6 +4,7 @@ import android.media.MediaDataSource
 import io.github.airdaydreamers.melddrive.data.model.StorageType
 import io.github.airdaydreamers.melddrive.data.repository.FileRepository
 import kotlinx.coroutines.runBlocking
+import timber.log.Timber
 
 class StorageMediaDataSource(
     private val repository: FileRepository,
@@ -20,6 +21,7 @@ class StorageMediaDataSource(
 
     @Synchronized
     override fun readAt(position: Long, buffer: ByteArray, offset: Int, size: Int): Int {
+        Timber.d("StorageMediaDataSource: readAt position=%d, size=%d, offset=%d, path=%s", position, size, offset, path)
         val isValidRead = !isClosed &&
             position >= 0L &&
             position < this.size &&
@@ -54,17 +56,20 @@ class StorageMediaDataSource(
         return position >= bufferStart && (position + requestedSize) <= bufferEnd
     }
 
+    @Suppress("TooGenericExceptionCaught")
     private fun fetchBufferChunk(position: Long) {
         if (isClosed) return
         val readSize = CHUNK_SIZE.toLong().coerceAtMost(size - position).toInt()
         if (readSize <= 0) return
 
         bufferStart = position
+        Timber.d("StorageMediaDataSource: Fetching buffer chunk path=%s, position=%d, readSize=%d", path, position, readSize)
         bufferData = try {
             runBlocking {
                 repository.readFile(path, position, readSize, storageType, serverId)
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Timber.e(e, "StorageMediaDataSource: Failed to fetch buffer chunk path=%s at position=%d", path, position)
             null
         }
     }
@@ -74,6 +79,7 @@ class StorageMediaDataSource(
 
     @Synchronized
     override fun close() {
+        Timber.d("StorageMediaDataSource: Closing datasource for path=%s", path)
         isClosed = true
         bufferData = null
         bufferStart = -1L

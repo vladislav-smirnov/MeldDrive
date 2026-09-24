@@ -20,6 +20,7 @@ import io.github.airdaydreamers.melddrive.data.model.FileItem
 import io.github.airdaydreamers.melddrive.data.model.StorageType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.util.EnumSet
 
 open class SmbFileSystemHandler @AssistedInject constructor(@Assisted private val server: RemoteServer, private val client: SMBClient) : StorageSource {
@@ -29,10 +30,12 @@ open class SmbFileSystemHandler @AssistedInject constructor(@Assisted private va
         fun create(server: RemoteServer): SmbFileSystemHandler
     }
 
+    @Suppress("TooGenericExceptionCaught")
     private suspend fun <T> useSession(block: suspend (Session) -> T): T = withContext(Dispatchers.IO) {
         var connection: Connection? = null
         var session: Session? = null
         try {
+            Timber.d("SmbFileSystemHandler: Connecting to SMB server host=%s, port=%d, anonymous=%b", server.host, server.port, server.isAnonymous)
             connection = client.connect(server.host, server.port)
             val authContext = if (server.isAnonymous) {
                 AuthenticationContext.guest()
@@ -41,6 +44,9 @@ open class SmbFileSystemHandler @AssistedInject constructor(@Assisted private va
             }
             session = connection.authenticate(authContext)
             block(session)
+        } catch (e: Exception) {
+            Timber.e(e, "SmbFileSystemHandler: Exception during SMB operation for host=%s", server.host)
+            throw e
         } finally {
             session?.close()
             connection?.close()
@@ -48,6 +54,7 @@ open class SmbFileSystemHandler @AssistedInject constructor(@Assisted private va
     }
 
     override suspend fun listFiles(path: String): List<FileItem> = useSession { session ->
+        Timber.d("SmbFileSystemHandler: listFiles path=%s", path)
         if (path.isEmpty()) {
             listSharesFromRoot(session)
         } else {

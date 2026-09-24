@@ -34,6 +34,7 @@ kotlinxSerialization = "1.11.0"
 savedstate = "1.5.0"
 kover = "0.9.8"
 coil = "3.1.0"
+timber = "5.0.1"
 
 [libraries]
 detekt-rules-ruleauthors = { group = "io.gitlab.arturbosch.detekt", name = "detekt-rules-ruleauthors", version.ref = "detekt" }
@@ -89,6 +90,7 @@ kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 androidx-savedstate-compose = { group = "androidx.savedstate", name = "savedstate-compose", version.ref = "savedstate" }
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
 coil-video = { group = "io.coil-kt.coil3", name = "coil-video", version.ref = "coil" }
+timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

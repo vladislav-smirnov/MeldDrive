@@ -20,6 +20,7 @@ import io.github.airdaydreamers.melddrive.data.model.StorageType
 import io.github.airdaydreamers.melddrive.data.repository.FileRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import timber.log.Timber
 import java.io.FileNotFoundException
 import java.io.IOException
 
@@ -55,7 +56,11 @@ class FileStreamProvider : ContentProvider() {
     }
 
     override fun query(uri: Uri, projection: Array<out String>?, selection: String?, selectionArgs: Array<out String>?, sortOrder: String?): Cursor? {
-        val uriInfo = parseUri(uri) ?: return null
+        Timber.d("FileStreamProvider: query uri=%s", uri)
+        val uriInfo = parseUri(uri) ?: run {
+            Timber.w("FileStreamProvider: Invalid query URI=%s", uri)
+            return null
+        }
 
         val fileSize = if (ensureDependencies()) {
             try {
@@ -102,11 +107,16 @@ class FileStreamProvider : ContentProvider() {
     override fun update(uri: Uri, values: ContentValues?, selection: String?, selectionArgs: Array<out String>?): Int = 0
 
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor? {
+        Timber.i("FileStreamProvider: openFile uri=%s, mode=%s", uri, mode)
         if (!ensureDependencies()) {
+            Timber.e("FileStreamProvider: Dependencies not initialized when opening %s", uri)
             throw FileNotFoundException("Dependencies not initialized")
         }
 
-        val uriInfo = parseUri(uri) ?: throw FileNotFoundException("Invalid URI: $uri")
+        val uriInfo = parseUri(uri) ?: run {
+            Timber.e("FileStreamProvider: Invalid URI %s", uri)
+            throw FileNotFoundException("Invalid URI: $uri")
+        }
 
         val bufferingEnabled = runBlocking { fileSettingsManager.bufferingEnabled.first() }
         val bufferSizeMb = runBlocking { fileSettingsManager.bufferSizeMb.first() }
@@ -132,7 +142,8 @@ class FileStreamProvider : ContentProvider() {
                 ),
                 handler,
             )
-        } catch (_: IOException) {
+        } catch (e: IOException) {
+            Timber.e(e, "FileStreamProvider: Failed to open proxy file descriptor for %s", uri)
             throw FileNotFoundException("Failed to open proxy file descriptor")
         }
     }

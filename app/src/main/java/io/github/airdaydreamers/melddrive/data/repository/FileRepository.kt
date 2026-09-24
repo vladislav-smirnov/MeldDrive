@@ -10,6 +10,7 @@ import io.github.airdaydreamers.melddrive.data.storage.SmbFileSystemHandler
 import io.github.airdaydreamers.melddrive.data.storage.StorageSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -29,6 +30,7 @@ open class FileRepository @Inject constructor(
     }
 
     private suspend fun getHandler(storageType: StorageType, serverId: Long?): StorageSource = withContext(Dispatchers.IO) {
+        Timber.d("FileRepository: Getting handler for storageType=%s, serverId=%s", storageType, serverId)
         when (storageType) {
             StorageType.LOCAL -> localHandler
 
@@ -58,8 +60,10 @@ open class FileRepository @Inject constructor(
         }
     }
 
-    open suspend fun listFiles(path: String, storageType: StorageType, serverId: Long? = null): List<FileItem> =
-        getHandler(storageType, serverId).listFiles(path)
+    open suspend fun listFiles(path: String, storageType: StorageType, serverId: Long? = null): List<FileItem> {
+        Timber.d("FileRepository: listFiles path=%s, storageType=%s, serverId=%s", path, storageType, serverId)
+        return getHandler(storageType, serverId).listFiles(path)
+    }
 
     suspend fun deleteFile(path: String, storageType: StorageType, serverId: Long?) {
         getHandler(storageType, serverId).deleteFile(path)
