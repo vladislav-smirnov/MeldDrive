@@ -1,7 +1,9 @@
 package io.github.airdaydreamers.melddrive.ui.components
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,9 +19,13 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.VideoFile
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -27,25 +33,45 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
+import coil3.request.CachePolicy
+import coil3.request.ImageRequest
 import io.github.airdaydreamers.melddrive.data.model.FileItem
+import io.github.airdaydreamers.melddrive.data.model.VideoThumbnailModel
+import io.github.airdaydreamers.melddrive.util.MimeTypeMapCompat
+
+private const val ICON_CORNER_RADIUS_DP = 6
+private const val FALLBACK_ICON_SIZE_RATIO = 0.6f
+private const val BADGE_CONTAINER_SIZE_RATIO = 0.45f
+private const val BADGE_ICON_SIZE_RATIO = 0.35f
+private const val BADGE_BACKGROUND_ALPHA = 0.5f
 
 @Composable
-fun FileList(files: List<FileItem>, selectedFiles: Set<String>, onFileClick: (FileItem) -> Unit, onFileLongClick: (FileItem) -> Unit) {
+fun FileList(files: List<FileItem>, selectedFiles: Set<String>, onFileClick: (FileItem) -> Unit, onFileLongClick: (FileItem) -> Unit, serverId: Long? = null) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
     ) {
-        items(files) { file ->
+        items(files, key = { it.path }) { file ->
             FileListItem(
                 file = file,
                 isSelected = selectedFiles.contains(file.path),
                 onClick = { onFileClick(file) },
                 onLongClick = { onFileLongClick(file) },
+                serverId = serverId,
             )
         }
     }
@@ -53,7 +79,7 @@ fun FileList(files: List<FileItem>, selectedFiles: Set<String>, onFileClick: (Fi
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun FileListItem(file: FileItem, isSelected: Boolean, onClick: () -> Unit, onLongClick: () -> Unit) {
+fun FileListItem(file: FileItem, isSelected: Boolean, onClick: () -> Unit, onLongClick: () -> Unit, serverId: Long? = null) {
     Surface(
         color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
         modifier = Modifier
@@ -69,11 +95,7 @@ fun FileListItem(file: FileItem, isSelected: Boolean, onClick: () -> Unit, onLon
                 .padding(vertical = 12.dp, horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                imageVector = if (file.isDirectory) Icons.Default.Folder else Icons.Default.Description,
-                contentDescription = null,
-                tint = if (file.isDirectory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-            )
+            FileIcon(file = file, serverId = serverId, iconSize = 40.dp)
             Spacer(Modifier.width(16.dp))
             Text(
                 text = file.name,
@@ -85,18 +107,19 @@ fun FileListItem(file: FileItem, isSelected: Boolean, onClick: () -> Unit, onLon
 }
 
 @Composable
-fun FileGrid(files: List<FileItem>, selectedFiles: Set<String>, onFileClick: (FileItem) -> Unit, onFileLongClick: (FileItem) -> Unit) {
+fun FileGrid(files: List<FileItem>, selectedFiles: Set<String>, onFileClick: (FileItem) -> Unit, onFileLongClick: (FileItem) -> Unit, serverId: Long? = null) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(120.dp),
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
     ) {
-        items(files) { file ->
+        items(files, key = { it.path }) { file ->
             FileGridItem(
                 file = file,
                 isSelected = selectedFiles.contains(file.path),
                 onClick = { onFileClick(file) },
                 onLongClick = { onFileLongClick(file) },
+                serverId = serverId,
             )
         }
     }
@@ -104,7 +127,7 @@ fun FileGrid(files: List<FileItem>, selectedFiles: Set<String>, onFileClick: (Fi
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun FileGridItem(file: FileItem, isSelected: Boolean, onClick: () -> Unit, onLongClick: () -> Unit) {
+fun FileGridItem(file: FileItem, isSelected: Boolean, onClick: () -> Unit, onLongClick: () -> Unit, serverId: Long? = null) {
     Card(
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
@@ -123,12 +146,7 @@ fun FileGridItem(file: FileItem, isSelected: Boolean, onClick: () -> Unit, onLon
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Icon(
-                imageVector = if (file.isDirectory) Icons.Default.Folder else Icons.Default.Description,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = if (file.isDirectory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-            )
+            FileIcon(file = file, serverId = serverId, iconSize = 48.dp)
             Spacer(Modifier.height(8.dp))
             Text(
                 text = file.name,
@@ -136,6 +154,87 @@ fun FileGridItem(file: FileItem, isSelected: Boolean, onClick: () -> Unit, onLon
                 maxLines = 2,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )
+        }
+    }
+}
+
+@Composable
+fun FileIcon(file: FileItem, serverId: Long?, iconSize: Dp) {
+    val isVideo = !file.isDirectory && MimeTypeMapCompat.isVideoFile(file.name)
+
+    if (file.isDirectory) {
+        Icon(
+            imageVector = Icons.Default.Folder,
+            contentDescription = null,
+            modifier = Modifier.size(iconSize),
+            tint = MaterialTheme.colorScheme.primary,
+        )
+    } else if (isVideo) {
+        VideoThumbnail(
+            file = file,
+            serverId = serverId,
+            iconSize = iconSize,
+        )
+    } else {
+        Icon(
+            imageVector = Icons.Default.Description,
+            contentDescription = null,
+            modifier = Modifier.size(iconSize),
+            tint = MaterialTheme.colorScheme.outline,
+        )
+    }
+}
+
+@Composable
+fun VideoThumbnail(file: FileItem, serverId: Long?, iconSize: Dp) {
+    val context = LocalContext.current
+    val model = remember(file, serverId) {
+        VideoThumbnailModel(file = file, serverId = serverId)
+    }
+
+    Box(
+        modifier = Modifier
+            .size(iconSize)
+            .clip(RoundedCornerShape(ICON_CORNER_RADIUS_DP.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+        contentAlignment = Alignment.Center,
+    ) {
+        var isSuccess by remember(model) { mutableStateOf(false) }
+
+        AsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(model)
+                .memoryCachePolicy(CachePolicy.ENABLED)
+                .diskCachePolicy(CachePolicy.ENABLED)
+                .build(),
+            contentDescription = file.name,
+            contentScale = ContentScale.Crop,
+            onSuccess = { isSuccess = true },
+            onError = { isSuccess = false },
+            modifier = Modifier.fillMaxSize(),
+        )
+
+        if (!isSuccess) {
+            Icon(
+                imageVector = Icons.Default.VideoFile,
+                contentDescription = null,
+                modifier = Modifier.size(iconSize * FALLBACK_ICON_SIZE_RATIO),
+                tint = MaterialTheme.colorScheme.outline,
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(iconSize * BADGE_CONTAINER_SIZE_RATIO)
+                    .background(Color.Black.copy(alpha = BADGE_BACKGROUND_ALPHA), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    modifier = Modifier.size(iconSize * BADGE_ICON_SIZE_RATIO),
+                    tint = Color.White,
+                )
+            }
         }
     }
 }
