@@ -301,6 +301,7 @@ private fun FileListView(state: FileManagerState, onIntent: (FileManagerIntent) 
             selectedFiles = state.selectedFiles,
             onFileClick = { onIntent(FileManagerIntent.OpenFile(it)) },
             onFileLongClick = { onIntent(FileManagerIntent.SelectFile(it.path)) },
+            serverId = state.currentServerId,
         )
     } else {
         FileList(
@@ -308,6 +309,7 @@ private fun FileListView(state: FileManagerState, onIntent: (FileManagerIntent) 
             selectedFiles = state.selectedFiles,
             onFileClick = { onIntent(FileManagerIntent.OpenFile(it)) },
             onFileLongClick = { onIntent(FileManagerIntent.SelectFile(it.path)) },
+            serverId = state.currentServerId,
         )
     }
 }
