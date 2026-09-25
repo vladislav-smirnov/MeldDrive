@@ -83,6 +83,11 @@ fun SettingsContent(state: SettingsState, onIntent: (SettingsIntent) -> Unit, on
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.Top,
         ) {
+            ShowHiddenFilesToggleSection(
+                showHiddenFiles = state.showHiddenFiles,
+                onCheckedChange = { onIntent(SettingsIntent.SetShowHiddenFiles(it)) },
+            )
+
             LanguageSelectionSection(
                 currentLanguageCode = state.currentLanguageCode,
                 onClick = { showLanguageBottomSheet = true },
@@ -111,6 +116,38 @@ fun SettingsContent(state: SettingsState, onIntent: (SettingsIntent) -> Unit, on
             )
         }
     }
+}
+
+@Composable
+fun ShowHiddenFilesToggleSection(showHiddenFiles: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    ListItem(
+        headlineContent = {
+            Text(
+                text = stringResource(R.string.settings_show_hidden_files_title),
+                style = MaterialTheme.typography.titleMedium,
+            )
+        },
+        supportingContent = {
+            Text(
+                text = stringResource(R.string.settings_show_hidden_files_summary),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
+        trailingContent = {
+            Switch(
+                checked = showHiddenFiles,
+                onCheckedChange = onCheckedChange,
+                modifier = Modifier.testTag("show_hidden_files_switch"),
+            )
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 2.dp)
+            .clip(CircleShape)
+            .clickable { onCheckedChange(!showHiddenFiles) }
+            .testTag("show_hidden_files_toggle_row"),
+    )
 }
 
 @Composable

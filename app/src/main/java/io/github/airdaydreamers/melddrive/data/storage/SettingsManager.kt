@@ -23,6 +23,10 @@ class SettingsManager(private val context: Context) {
         preferences[KEY_BUFFER_SIZE_MB] ?: DEFAULT_BUFFER_SIZE_MB
     }
 
+    val showHiddenFiles: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        preferences[KEY_SHOW_HIDDEN_FILES] ?: false
+    }
+
     suspend fun setBufferingEnabled(enabled: Boolean) {
         Timber.i("SettingsManager: Setting bufferingEnabled=%b", enabled)
         context.settingsDataStore.edit { preferences ->
@@ -37,9 +41,17 @@ class SettingsManager(private val context: Context) {
         }
     }
 
+    suspend fun setShowHiddenFiles(show: Boolean) {
+        Timber.i("SettingsManager: Setting showHiddenFiles=%b", show)
+        context.settingsDataStore.edit { preferences ->
+            preferences[KEY_SHOW_HIDDEN_FILES] = show
+        }
+    }
+
     companion object {
         private val KEY_BUFFERING_ENABLED = booleanPreferencesKey("buffering_enabled")
         private val KEY_BUFFER_SIZE_MB = intPreferencesKey("buffer_size_mb")
+        private val KEY_SHOW_HIDDEN_FILES = booleanPreferencesKey("show_hidden_files")
         const val DEFAULT_BUFFER_SIZE_MB = 16
     }
 }

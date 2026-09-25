@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <!-- Untranslatable -->
     <string name="app_name" translatable="false">MeldDrive</string>
     <string name="untranslatable_smb" translatable="false">SMB</string>
@@ -61,6 +61,8 @@
     <string name="settings_buffer_size_summary">Larger buffers improve stability but use more memory.</string>
     <string name="mb_format">%1$d <xliff:g id="mb">%2$s</xliff:g></string>
 
+    <string name="settings_show_hidden_files_title" tools:ignore="MissingTranslation">Show hidden files</string>
+    <string name="settings_show_hidden_files_summary" tools:ignore="MissingTranslation">Display files and folders that start with a dot or are marked hidden</string>
     <string name="settings_language_title">App Language</string>
     <string name="settings_language_summary">Choose the language for the application</string>
     <string name="language_select_title">Select Language</string>

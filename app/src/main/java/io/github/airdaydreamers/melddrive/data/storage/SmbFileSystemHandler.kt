@@ -1,6 +1,7 @@
 package io.github.airdaydreamers.melddrive.data.storage
 
 import com.hierynomus.msfscc.FileAttributes
+import com.hierynomus.msfscc.fileinformation.FileIdBothDirectoryInformation
 import com.hierynomus.mssmb2.SMB2CreateDisposition
 import com.hierynomus.mssmb2.SMB2ShareAccess
 import com.hierynomus.smbj.SMBClient
@@ -73,6 +74,7 @@ open class SmbFileSystemHandler @AssistedInject constructor(@Assisted private va
                 path = share.netName,
                 name = share.netName,
                 isDirectory = true,
+                isHidden = share.netName.startsWith("."),
                 storageType = StorageType.SMB,
             )
         }
@@ -83,19 +85,26 @@ open class SmbFileSystemHandler @AssistedInject constructor(@Assisted private va
         val shareName = parts[0]
         val relativePath = if (parts.size > 1) parts[1] else ""
 
-        return@withContext (session.connectShare(shareName) as DiskShare).use { share ->
-            share.list(relativePath).map { info ->
-                val isDir = (info.fileAttributes and FileAttributes.FILE_ATTRIBUTE_DIRECTORY.value) != 0L
-                FileItem(
-                    path = "$shareName/${if (relativePath.isEmpty()) "" else "$relativePath/"}${info.fileName}",
-                    name = info.fileName,
-                    isDirectory = isDir,
-                    size = if (isDir) 0 else info.endOfFile,
-                    lastModified = info.changeTime.toEpochMillis(),
-                    storageType = StorageType.SMB,
-                )
-            }.filter { it.name != "." && it.name != ".." }
+        (session.connectShare(shareName) as DiskShare).use { share ->
+            share.list(relativePath)
+                .filter { it.fileName != "." && it.fileName != ".." }
+                .map { info -> createSmbFileItem(info, shareName, relativePath) }
         }
+    }
+
+    private fun createSmbFileItem(info: FileIdBothDirectoryInformation, shareName: String, relativePath: String): FileItem {
+        val isDir = (info.fileAttributes and FileAttributes.FILE_ATTRIBUTE_DIRECTORY.value) != 0L
+        val isHidden = info.fileName.startsWith(".") || (info.fileAttributes and FileAttributes.FILE_ATTRIBUTE_HIDDEN.value) != 0L
+        val fullPath = if (relativePath.isEmpty()) "$shareName/${info.fileName}" else "$shareName/$relativePath/${info.fileName}"
+        return FileItem(
+            path = fullPath,
+            name = info.fileName,
+            isDirectory = isDir,
+            size = if (isDir) 0 else info.endOfFile,
+            lastModified = info.changeTime.toEpochMillis(),
+            isHidden = isHidden,
+            storageType = StorageType.SMB,
+        )
     }
 
     override suspend fun deleteFile(path: String): Boolean = useSession { session ->
@@ -209,6 +218,7 @@ open class SmbFileSystemHandler @AssistedInject constructor(@Assisted private va
                         path = share.netName,
                         name = share.netName,
                         isDirectory = true,
+                        isHidden = share.netName.startsWith("."),
                         storageType = StorageType.SMB,
                     ),
                 )
@@ -229,6 +239,7 @@ open class SmbFileSystemHandler @AssistedInject constructor(@Assisted private va
         share.list(relativePath).filter { it.fileName != "." && it.fileName != ".." }.forEach { info ->
             val currentPath = if (relativePath.isEmpty()) info.fileName else "$relativePath/${info.fileName}"
             val isDir = (info.fileAttributes and FileAttributes.FILE_ATTRIBUTE_DIRECTORY.value) != 0L
+            val isHidden = info.fileName.startsWith(".") || (info.fileAttributes and FileAttributes.FILE_ATTRIBUTE_HIDDEN.value) != 0L
             if (info.fileName.contains(query, ignoreCase = true)) {
                 result.add(
                     FileItem(
@@ -237,6 +248,7 @@ open class SmbFileSystemHandler @AssistedInject constructor(@Assisted private va
                         isDirectory = isDir,
                         size = if (isDir) 0 else info.endOfFile,
                         lastModified = info.changeTime.toEpochMillis(),
+                        isHidden = isHidden,
                         storageType = StorageType.SMB,
                     ),
                 )
