@@ -24,6 +24,9 @@ import io.github.airdaydreamers.melddrive.data.storage.StorageMediaDataSource
 import timber.log.Timber
 import java.io.BufferedOutputStream
 import java.util.concurrent.TimeUnit
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
@@ -41,31 +44,34 @@ class VideoFrameFetcher(
         val cachedResult = checkDiskCache()
         if (cachedResult != null) return cachedResult
 
-        val retriever = MediaMetadataRetriever()
         return try {
-            retriever.setDataSource()
+            MediaMetadataRetriever().use { retriever ->
+                retriever.setDataSource()
 
-            val bitmap = retriever.embeddedPicture?.let {
-                BitmapFactory.decodeByteArray(it, 0, it.size)
-            } ?: extractFrameBitmap(retriever)
+                val bitmap = retriever.embeddedPicture?.let {
+                    BitmapFactory.decodeByteArray(it, 0, it.size)
+                } ?: extractFrameBitmap(retriever)
 
-            if (bitmap != null) {
-                Timber.d("VideoFrameFetcher: Decoded frame (%dx%d) for cacheKey=%s", bitmap.width, bitmap.height, cacheKey)
-                saveToDiskCache(bitmap)
-                ImageFetchResult(
-                    image = bitmap.toDrawable(options.context.resources).asImage(),
-                    isSampled = false,
-                    dataSource = DataSource.DISK,
-                )
-            } else {
-                Timber.w("VideoFrameFetcher: Failed to decode frame for cacheKey=%s", cacheKey)
-                null
+                if (bitmap != null) {
+                    Timber.d("VideoFrameFetcher: Decoded frame (%dx%d) for cacheKey=%s", bitmap.width, bitmap.height, cacheKey)
+                    saveToDiskCache(bitmap)
+                    ImageFetchResult(
+                        image = bitmap.toDrawable(options.context.resources).asImage(),
+                        isSampled = false,
+                        dataSource = DataSource.DISK,
+                    )
+                } else {
+                    Timber.w("VideoFrameFetcher: Failed to decode frame for cacheKey=%s", cacheKey)
+                    null
+                }
             }
         } catch (e: Exception) {
             Timber.e(e, "VideoFrameFetcher: Error fetching frame for cacheKey=%s", cacheKey)
             null
         } finally {
-            releaseResources(retriever)
+            try {
+                dataSource?.close()
+            } catch (_: Exception) {}
         }
     }
 
@@ -118,19 +124,6 @@ class VideoFrameFetcher(
                 editor.abort()
             }
         }
-    }
-
-    private fun releaseResources(retriever: MediaMetadataRetriever) {
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                retriever.close()
-            } else {
-                retriever.release()
-            }
-        } catch (_: Exception) {}
-        try {
-            dataSource?.close()
-        } catch (_: Exception) {}
     }
 
     private fun extractFrameBitmap(retriever: MediaMetadataRetriever): Bitmap? {
@@ -253,4 +246,21 @@ class VideoFrameFetcher(
         private const val FALLBACK_FRAME_MICROS = 1_000_000L
         private const val COMPRESS_QUALITY = 85
     }
+}
+
+@OptIn(ExperimentalContracts::class)
+private inline fun <R> MediaMetadataRetriever.use(block: (MediaMetadataRetriever) -> R): R {
+    contract {
+        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+    }
+    val autoCloseable: AutoCloseable = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        this
+    } else {
+        AutoCloseable {
+            try {
+                release()
+            } catch (_: Exception) {}
+        }
+    }
+    return autoCloseable.use { block(this) }
 }
