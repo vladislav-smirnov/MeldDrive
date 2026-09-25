@@ -18,6 +18,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
@@ -44,6 +45,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.airdaydreamers.melddrive.R
 import io.github.airdaydreamers.melddrive.data.model.StorageType
+import io.github.airdaydreamers.melddrive.ui.mvi.ViewMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,12 +53,12 @@ fun FileManagerTopBar(
     currentPath: String,
     storageType: StorageType,
     serverName: String?,
-    isGridView: Boolean,
+    viewMode: ViewMode,
     searchQuery: String,
     isSearchActive: Boolean,
     onMenuClick: (() -> Unit)?,
     onNavigateTo: (String) -> Unit,
-    onToggleViewMode: (Boolean) -> Unit,
+    onToggleViewMode: (ViewMode) -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onSearchActiveChange: (Boolean) -> Unit,
     onSettingsClick: () -> Unit = {},
@@ -84,7 +86,7 @@ fun FileManagerTopBar(
                     currentPath = currentPath,
                     storageType = storageType,
                     serverName = serverName,
-                    isGridView = isGridView,
+                    viewMode = viewMode,
                     onMenuClick = onMenuClick,
                     onNavigateTo = onNavigateTo,
                     onToggleViewMode = onToggleViewMode,
@@ -102,10 +104,10 @@ fun DefaultTopBar(
     currentPath: String,
     storageType: StorageType,
     serverName: String?,
-    isGridView: Boolean,
+    viewMode: ViewMode,
     onMenuClick: (() -> Unit)?,
     onNavigateTo: (String) -> Unit,
-    onToggleViewMode: (Boolean) -> Unit,
+    onToggleViewMode: (ViewMode) -> Unit,
     onSearchClick: () -> Unit,
     onSettingsClick: () -> Unit,
 ) {
@@ -129,9 +131,19 @@ fun DefaultTopBar(
             IconButton(onClick = onSearchClick, modifier = Modifier.testTag("search_button")) {
                 Icon(Icons.Default.Search, contentDescription = stringResource(R.string.content_desc_search))
             }
-            IconButton(onClick = { onToggleViewMode(!isGridView) }) {
+            val nextViewMode = when (viewMode) {
+                ViewMode.LIST -> ViewMode.GRID
+                ViewMode.GRID -> ViewMode.CARD
+                ViewMode.CARD -> ViewMode.LIST
+            }
+            val icon = when (viewMode) {
+                ViewMode.LIST -> Icons.AutoMirrored.Filled.ViewList
+                ViewMode.GRID -> Icons.Default.GridView
+                ViewMode.CARD -> Icons.Default.Dashboard
+            }
+            IconButton(onClick = { onToggleViewMode(nextViewMode) }) {
                 Icon(
-                    if (isGridView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
+                    imageVector = icon,
                     contentDescription = stringResource(R.string.content_desc_toggle_view),
                 )
             }

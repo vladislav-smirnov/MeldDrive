@@ -28,7 +28,7 @@ class VideoThumbnailKeyerTest {
      * Use Case: Generate deterministic cache key for VideoThumbnailModel
      * Given a VideoThumbnailModel
      * When key is called
-     * Then it should return string combining storageType, serverId, path, lastModified, and size
+     * Then it should return a deterministic key based on the file identity
      */
     @Test
     fun testKeyGeneration() {

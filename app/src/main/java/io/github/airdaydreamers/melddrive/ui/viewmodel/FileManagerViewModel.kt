@@ -136,7 +136,7 @@ class FileManagerViewModel @Inject constructor(
                 it.copy(selectedFiles = newSelection)
             }
 
-            is FileManagerIntent.ToggleViewMode -> _state.update { it.copy(isGridView = intent.isGridView) }
+            is FileManagerIntent.ToggleViewMode -> _state.update { it.copy(viewMode = intent.viewMode) }
 
             FileManagerIntent.Refresh -> loadFiles(_state.value.currentPath, _state.value.currentStorageType, _state.value.currentServerId)
 

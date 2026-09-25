@@ -11,6 +11,7 @@ import io.github.airdaydreamers.melddrive.data.repository.FileRepository
 import io.github.airdaydreamers.melddrive.data.repository.ServerRepository
 import io.github.airdaydreamers.melddrive.data.storage.SettingsManager
 import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerIntent
+import io.github.airdaydreamers.melddrive.ui.mvi.ViewMode
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -198,6 +199,23 @@ class FileManagerViewModelTest {
             assertEquals(2, state2.files.size)
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    /**
+     * Use Case: Toggle View Mode
+     * Given initial view mode is LIST
+     * When user toggles view mode to GRID and then CARD
+     * Then viewMode state should update accordingly
+     */
+    @Test
+    fun testToggleViewMode() = runBlocking {
+        assertEquals(ViewMode.LIST, viewModel.state.value.viewMode)
+
+        viewModel.onIntent(FileManagerIntent.ToggleViewMode(ViewMode.GRID))
+        assertEquals(ViewMode.GRID, viewModel.state.value.viewMode)
+
+        viewModel.onIntent(FileManagerIntent.ToggleViewMode(ViewMode.CARD))
+        assertEquals(ViewMode.CARD, viewModel.state.value.viewMode)
     }
 
     @Test

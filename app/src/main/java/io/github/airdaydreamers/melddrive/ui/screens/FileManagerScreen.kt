@@ -35,6 +35,7 @@ import io.github.airdaydreamers.melddrive.data.model.SidebarItem
 import io.github.airdaydreamers.melddrive.data.model.SidebarItemType
 import io.github.airdaydreamers.melddrive.data.model.StorageType
 import io.github.airdaydreamers.melddrive.ui.components.AdaptiveNavigation.NavigationType
+import io.github.airdaydreamers.melddrive.ui.components.FileCardGrid
 import io.github.airdaydreamers.melddrive.ui.components.FileGrid
 import io.github.airdaydreamers.melddrive.ui.components.FileList
 import io.github.airdaydreamers.melddrive.ui.components.FileManagerDrawerContent
@@ -44,6 +45,7 @@ import io.github.airdaydreamers.melddrive.ui.components.PermanentDrawerContent
 import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerEffect
 import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerIntent
 import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerState
+import io.github.airdaydreamers.melddrive.ui.mvi.ViewMode
 import io.github.airdaydreamers.melddrive.ui.theme.MeldDriveTheme
 import io.github.airdaydreamers.melddrive.ui.viewmodel.FileManagerViewModel
 import kotlinx.coroutines.flow.collectLatest
@@ -259,7 +261,7 @@ private fun FileManagerMainScaffold(
                 currentPath = state.currentPath,
                 storageType = state.currentStorageType,
                 serverName = currentServerName,
-                isGridView = state.isGridView,
+                viewMode = state.viewMode,
                 searchQuery = state.searchQuery,
                 isSearchActive = state.isSearchActive,
                 onMenuClick = onMenuClick,
@@ -295,16 +297,24 @@ private fun FileListView(state: FileManagerState, onIntent: (FileManagerIntent) 
         }
     }
 
-    if (state.isGridView) {
-        FileGrid(
+    when (state.viewMode) {
+        ViewMode.LIST -> FileList(
             files = filteredFiles,
             selectedFiles = state.selectedFiles,
             onFileClick = { onIntent(FileManagerIntent.OpenFile(it)) },
             onFileLongClick = { onIntent(FileManagerIntent.SelectFile(it.path)) },
             serverId = state.currentServerId,
         )
-    } else {
-        FileList(
+
+        ViewMode.GRID -> FileGrid(
+            files = filteredFiles,
+            selectedFiles = state.selectedFiles,
+            onFileClick = { onIntent(FileManagerIntent.OpenFile(it)) },
+            onFileLongClick = { onIntent(FileManagerIntent.SelectFile(it.path)) },
+            serverId = state.currentServerId,
+        )
+
+        ViewMode.CARD -> FileCardGrid(
             files = filteredFiles,
             selectedFiles = state.selectedFiles,
             onFileClick = { onIntent(FileManagerIntent.OpenFile(it)) },
