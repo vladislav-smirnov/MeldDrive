@@ -3,6 +3,8 @@ package io.github.airdaydreamers.melddrive.data.storage
 import android.media.MediaDataSource
 import io.github.airdaydreamers.melddrive.data.model.StorageType
 import io.github.airdaydreamers.melddrive.data.repository.FileRepository
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 
@@ -18,11 +20,11 @@ class StorageMediaDataSource(
     private var isClosed = false
 
     @Volatile
-    private var bufferStart: Long = -1L
+    private var currentChunk: BufferChunk? = null
 
-    @Volatile
-    private var bufferData: ByteArray? = null
+    private val fetchJob = Job()
 
+    @Suppress("ReturnCount")
     override fun readAt(position: Long, buffer: ByteArray, offset: Int, size: Int): Int {
         if (isClosed) return EOF
         Timber.d("StorageMediaDataSource: readAt position=%d, size=%d, offset=%d, path=%s", position, size, offset, path)
@@ -43,16 +45,16 @@ class StorageMediaDataSource(
 
         if (isClosed) return EOF
 
-        val currentBuffer = bufferData
-        val currentBufferStart = bufferStart
-        val localOffset = if (currentBuffer != null) (position - currentBufferStart).toInt() else 0
-        if (currentBuffer == null || localOffset < 0 || localOffset >= currentBuffer.size) return EOF
+        val chunk = currentChunk ?: return EOF
 
-        val available = (currentBuffer.size - localOffset).coerceAtLeast(0)
+        val localOffset = (position - chunk.start).toInt()
+        if (localOffset < 0 || localOffset >= chunk.data.size) return EOF
+
+        val available = (chunk.data.size - localOffset).coerceAtLeast(0)
         val actualRead = bytesToRead.coerceAtMost(available)
 
         return if (actualRead > 0) {
-            System.arraycopy(currentBuffer, localOffset, buffer, offset, actualRead)
+            System.arraycopy(chunk.data, localOffset, buffer, offset, actualRead)
             actualRead
         } else {
             EOF
@@ -60,10 +62,9 @@ class StorageMediaDataSource(
     }
 
     private fun isPositionInBuffer(position: Long, requestedSize: Int): Boolean {
-        val currentBuffer = bufferData ?: return false
-        val currentBufferStart = bufferStart
-        val bufferEnd = currentBufferStart + currentBuffer.size
-        return position >= currentBufferStart && (position + requestedSize) <= bufferEnd
+        val chunk = currentChunk ?: return false
+        val bufferEnd = chunk.start + chunk.data.size
+        return position >= chunk.start && (position + requestedSize) <= bufferEnd
     }
 
     @Suppress("TooGenericExceptionCaught")
@@ -73,18 +74,27 @@ class StorageMediaDataSource(
         if (readSize <= 0) return
 
         Timber.d("StorageMediaDataSource: Fetching buffer chunk path=%s, position=%d, readSize=%d", path, position, readSize)
-        val chunk = try {
-            runBlocking {
+        val chunkData = try {
+            runBlocking(fetchJob) {
                 repository.readFile(path, position, readSize, storageType, serverId)
             }
+        } catch (_: CancellationException) {
+            Timber.d("StorageMediaDataSource: Fetch cancelled path=%s at position=%d", path, position)
+            null
+        } catch (_: InterruptedException) {
+            Timber.d("StorageMediaDataSource: Thread interrupted path=%s at position=%d", path, position)
+            null
         } catch (e: Exception) {
             Timber.e(e, "StorageMediaDataSource: Failed to fetch buffer chunk path=%s at position=%d", path, position)
             null
         }
 
-        if (!isClosed) {
-            bufferStart = position
-            bufferData = chunk
+        if (chunkData != null) {
+            synchronized(this) {
+                if (!isClosed) {
+                    currentChunk = BufferChunk(position, chunkData)
+                }
+            }
         }
     }
 
@@ -93,8 +103,30 @@ class StorageMediaDataSource(
     override fun close() {
         Timber.d("StorageMediaDataSource: Closing datasource for path=%s", path)
         isClosed = true
-        bufferData = null
-        bufferStart = -1L
+        fetchJob.cancel()
+        synchronized(this) {
+            currentChunk = null
+        }
+    }
+
+    private data class BufferChunk(val start: Long, val data: ByteArray) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as BufferChunk
+
+            if (start != other.start) return false
+            if (!data.contentEquals(other.data)) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = start.hashCode()
+            result = 31 * result + data.contentHashCode()
+            return result
+        }
     }
 
     companion object {
