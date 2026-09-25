@@ -4,13 +4,19 @@ import io.github.airdaydreamers.melddrive.data.model.FileItem
 import io.github.airdaydreamers.melddrive.data.model.SidebarItem
 import io.github.airdaydreamers.melddrive.data.model.StorageType
 
+enum class ViewMode {
+    LIST,
+    GRID,
+    CARD,
+}
+
 data class FileManagerState(
     val currentPath: String,
     val currentStorageType: StorageType = StorageType.LOCAL,
     val currentServerId: Long? = null,
     val files: List<FileItem> = emptyList(),
     val sidebarItems: List<SidebarItem> = emptyList(),
-    val isGridView: Boolean = false,
+    val viewMode: ViewMode = ViewMode.LIST,
     val searchQuery: String = "",
     val isSearchActive: Boolean = false,
     val isLoading: Boolean = false,
@@ -22,7 +28,7 @@ sealed interface FileManagerIntent {
     data class NavigateTo(val path: String, val storageType: StorageType, val serverId: Long? = null) : FileManagerIntent
     data object NavigateUp : FileManagerIntent
     data class OpenFile(val fileItem: FileItem) : FileManagerIntent
-    data class ToggleViewMode(val isGridView: Boolean) : FileManagerIntent
+    data class ToggleViewMode(val viewMode: ViewMode) : FileManagerIntent
     data class Search(val query: String) : FileManagerIntent
     data class SetSearchActive(val isActive: Boolean) : FileManagerIntent
     data class SelectFile(val path: String) : FileManagerIntent

@@ -7,9 +7,15 @@ import timber.log.Timber
 
 class VideoThumbnailKeyer : Keyer<VideoThumbnailModel> {
     override fun key(data: VideoThumbnailModel, options: Options): String {
-        val file = data.file
-        val key = "video_thumb_${file.storageType.name}_${data.serverId ?: -1L}_${file.path}_${file.lastModified}_${file.size}"
-        Timber.d("VideoThumbnailKeyer: Key generated: %s for path=%s", key, file.path)
+        val key = baseKey(data)
+        Timber.d("VideoThumbnailKeyer: Key generated: %s for path=%s", key, data.file.path)
         return key
+    }
+
+    companion object {
+        fun baseKey(data: VideoThumbnailModel): String {
+            val file = data.file
+            return "video_thumb_${file.storageType.name}_${data.serverId ?: -1L}_${file.path}_${file.lastModified}_${file.size}"
+        }
     }
 }

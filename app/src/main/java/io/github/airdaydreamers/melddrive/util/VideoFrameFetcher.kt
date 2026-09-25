@@ -16,7 +16,6 @@ import coil3.fetch.Fetcher
 import coil3.fetch.ImageFetchResult
 import coil3.request.Options
 import coil3.size.Scale
-import coil3.size.pxOrElse
 import io.github.airdaydreamers.melddrive.data.model.StorageType
 import io.github.airdaydreamers.melddrive.data.model.VideoThumbnailModel
 import io.github.airdaydreamers.melddrive.data.repository.FileRepository
@@ -158,8 +157,8 @@ class VideoFrameFetcher(
     }
 
     private fun calculateTargetDimensions(srcWidth: Int, srcHeight: Int): Pair<Int, Int> {
-        val dstWidth = options.size.width.pxOrElse { if (srcWidth > 0) srcWidth else DEFAULT_DIMENSION_PX }
-        val dstHeight = options.size.height.pxOrElse { if (srcHeight > 0) srcHeight else DEFAULT_DIMENSION_PX }
+        val dstWidth = THUMBNAIL_MAX_DIMENSION_PX
+        val dstHeight = THUMBNAIL_MAX_DIMENSION_PX
 
         val rawScale = computeSizeMultiplier(
             srcWidth = if (srcWidth > 0) srcWidth else dstWidth,
@@ -200,7 +199,7 @@ class VideoFrameFetcher(
                 return null
             }
 
-            val cacheKey = "video_thumb_${file.storageType.name}_${data.serverId ?: -1L}_${file.path}_${file.lastModified}_${file.size}"
+            val cacheKey = VideoThumbnailKeyer.baseKey(data)
 
             return if (file.storageType == StorageType.LOCAL) {
                 VideoFrameFetcher(options, imageLoader, cacheKey) {
@@ -241,7 +240,7 @@ class VideoFrameFetcher(
     companion object {
         private const val ROTATION_90 = 90
         private const val ROTATION_270 = 270
-        private const val DEFAULT_DIMENSION_PX = 512
+        private const val THUMBNAIL_MAX_DIMENSION_PX = 768
         private const val FRAME_PERCENT = 1.0 / 3.0
         private const val FALLBACK_FRAME_MICROS = 1_000_000L
         private const val COMPRESS_QUALITY = 85

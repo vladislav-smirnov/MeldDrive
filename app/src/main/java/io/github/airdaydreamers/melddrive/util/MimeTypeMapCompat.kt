@@ -6,6 +6,15 @@ import java.util.Locale
 object MimeTypeMapCompat {
 
     private val extensionToMimeTypeMap = mapOf(
+        "bmp" to "image/bmp",
+        "gif" to "image/gif",
+        "heic" to "image/heic",
+        "heif" to "image/heif",
+        "jpeg" to "image/jpeg",
+        "jpg" to "image/jpeg",
+        "png" to "image/png",
+        "svg" to "image/svg+xml",
+        "webp" to "image/webp",
         "3g2" to "video/3gpp2",
         "3gp" to "video/3gpp",
         "3gp2" to "video/3gpp2",
@@ -65,5 +74,10 @@ object MimeTypeMapCompat {
     fun isVideoFile(fileNameOrPath: String): Boolean {
         val mimeType = getMimeType(fileNameOrPath)
         return mimeType.startsWith("video/")
+    }
+
+    fun isImageFile(fileNameOrPath: String): Boolean {
+        val mimeType = getMimeType(fileNameOrPath)
+        return mimeType.startsWith("image/")
     }
 }

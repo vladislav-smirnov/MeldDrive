@@ -29,6 +29,16 @@ class MimeTypeMapCompatTest {
     }
 
     @Test
+    fun testIsImageFile() {
+        assertTrue(MimeTypeMapCompat.isImageFile("photo.jpg"))
+        assertTrue(MimeTypeMapCompat.isImageFile("image.png"))
+        assertTrue(MimeTypeMapCompat.isImageFile("pic.webp"))
+
+        assertFalse(MimeTypeMapCompat.isImageFile("sample.mp4"))
+        assertFalse(MimeTypeMapCompat.isImageFile("document.txt"))
+    }
+
+    @Test
     fun testGetMimeTypeForVideoFiles() {
         assertEquals("video/mp4", MimeTypeMapCompat.getMimeType("sample.mp4"))
         assertEquals("video/x-matroska", MimeTypeMapCompat.getMimeType("movie.mkv"))
