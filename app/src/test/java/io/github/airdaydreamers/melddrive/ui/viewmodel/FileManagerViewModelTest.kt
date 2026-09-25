@@ -9,6 +9,7 @@ import io.github.airdaydreamers.melddrive.data.model.FileItem
 import io.github.airdaydreamers.melddrive.data.model.StorageType
 import io.github.airdaydreamers.melddrive.data.repository.FileRepository
 import io.github.airdaydreamers.melddrive.data.repository.ServerRepository
+import io.github.airdaydreamers.melddrive.data.storage.SettingsManager
 import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerIntent
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -41,6 +42,7 @@ class FileManagerViewModelTest {
     private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var fileRepository: FileRepository
     private lateinit var serverRepository: ServerRepository
+    private lateinit var settingsManager: SettingsManager
     private lateinit var mockContext: Context
     private lateinit var viewModel: FileManagerViewModel
 
@@ -52,7 +54,10 @@ class FileManagerViewModelTest {
 
         fileRepository = mockk(relaxed = true)
         serverRepository = mockk(relaxed = true)
+        settingsManager = mockk(relaxed = true)
         mockContext = mockk(relaxed = true)
+
+        every { settingsManager.showHiddenFiles } returns flowOf(false)
 
         every { mockContext.getString(R.string.toast_server_removed) } returns "Server removed"
         every { mockContext.getString(R.string.search_error, any()) } answers { "Search error: ${args[1]}" }
@@ -80,7 +85,7 @@ class FileManagerViewModelTest {
         every { serverRepository.getRemoteServers() } returns serversFlow
 
         // Initialize viewModel
-        viewModel = FileManagerViewModel(fileRepository, serverRepository, mockContext)
+        viewModel = FileManagerViewModel(fileRepository, serverRepository, settingsManager, mockContext)
     }
 
     @AfterEach
@@ -167,6 +172,34 @@ class FileManagerViewModelTest {
      * When the server is deleted
      * Then the ViewModel should reset current storage to LOCAL and current path to local root
      */
+    @Test
+    fun testHiddenFilesFiltering() = runBlocking {
+        val hiddenFlow = MutableStateFlow(false)
+        every { settingsManager.showHiddenFiles } returns hiddenFlow
+
+        val files = listOf(
+            FileItem("/mock/storage/file1.txt", "file1.txt", false, isHidden = false),
+            FileItem("/mock/storage/.hidden.txt", ".hidden.txt", false, isHidden = true),
+        )
+        coEvery { fileRepository.listFiles("/mock/storage", StorageType.LOCAL, null) } returns files
+
+        // Re-initialize viewModel with controlled hiddenFlow
+        viewModel = FileManagerViewModel(fileRepository, serverRepository, settingsManager, mockContext)
+
+        viewModel.state.test {
+            // First item (showHidden = false)
+            val state1 = awaitItem()
+            assertEquals(1, state1.files.size)
+            assertEquals("file1.txt", state1.files[0].name)
+
+            // When setting changes to true
+            hiddenFlow.value = true
+            val state2 = awaitItem()
+            assertEquals(2, state2.files.size)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
     @Test
     fun testDeleteActiveRemoteServerResetsToLocal() = runBlocking {
         // Given - Active server is ID 12

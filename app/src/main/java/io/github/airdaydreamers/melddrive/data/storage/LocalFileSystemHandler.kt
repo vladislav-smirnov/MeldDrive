@@ -44,12 +44,18 @@ class LocalFileSystemHandler @Inject constructor() : StorageSource {
         } catch (_: IOException) {
             DEFAULT_VALUE
         }
+        val isHidden = try {
+            it.name.startsWith(".") || Files.isHidden(it)
+        } catch (_: IOException) {
+            it.name.startsWith(".")
+        }
         return@withContext FileItem(
             path = it.toString(),
             name = it.name,
             isDirectory = it.isDirectory(),
             size = size,
             lastModified = lastModified,
+            isHidden = isHidden,
             storageType = StorageType.LOCAL,
         )
     }
@@ -108,6 +114,7 @@ class LocalFileSystemHandler @Inject constructor() : StorageSource {
         val result = mutableListOf<FileItem>()
         root.walkTopDown().forEach { file ->
             if (file.name.contains(query, ignoreCase = true)) {
+                val isHidden = file.name.startsWith(".") || file.isHidden
                 result.add(
                     FileItem(
                         path = file.absolutePath,
@@ -115,6 +122,7 @@ class LocalFileSystemHandler @Inject constructor() : StorageSource {
                         isDirectory = file.isDirectory,
                         size = if (file.isDirectory) DEFAULT_VALUE else file.length(),
                         lastModified = file.lastModified(),
+                        isHidden = isHidden,
                         storageType = StorageType.LOCAL,
                     ),
                 )

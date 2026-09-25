@@ -8,6 +8,7 @@ data class FileItem(
     val isDirectory: Boolean,
     val size: Long = 0,
     val lastModified: Long = 0,
+    val isHidden: Boolean = false,
     val storageType: StorageType = StorageType.LOCAL,
 )
 

@@ -36,6 +36,7 @@ class SettingsViewModelTest {
 
     private val bufferingEnabledFlow = MutableStateFlow(false)
     private val bufferSizeMbFlow = MutableStateFlow(16)
+    private val showHiddenFilesFlow = MutableStateFlow(false)
 
     @BeforeEach
     fun setUp() {
@@ -47,6 +48,7 @@ class SettingsViewModelTest {
 
         every { settingsManager.bufferingEnabled } returns bufferingEnabledFlow
         every { settingsManager.bufferSizeMb } returns bufferSizeMbFlow
+        every { settingsManager.showHiddenFiles } returns showHiddenFilesFlow
 
         viewModel = SettingsViewModel(settingsManager)
     }
@@ -68,14 +70,31 @@ class SettingsViewModelTest {
         // Given
         bufferingEnabledFlow.value = true
         bufferSizeMbFlow.value = 64
+        showHiddenFilesFlow.value = true
 
         // When & Then
         viewModel.state.test {
             val currentState = awaitItem()
             assertEquals(true, currentState.bufferingEnabled)
             assertEquals(64, currentState.bufferSizeMb)
+            assertEquals(true, currentState.showHiddenFiles)
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    /**
+     * Use Case: Process SetShowHiddenFiles Intent
+     * Given the viewmodel is initialized
+     * When onIntent(SettingsIntent.SetShowHiddenFiles(true)) is called
+     * Then it should launch a coroutine to update showHiddenFiles on settingsManager
+     */
+    @Test
+    fun testSetShowHiddenFilesIntent() {
+        // When
+        viewModel.onIntent(SettingsIntent.SetShowHiddenFiles(true))
+
+        // Then
+        coVerify(exactly = 1) { settingsManager.setShowHiddenFiles(true) }
     }
 
     /**

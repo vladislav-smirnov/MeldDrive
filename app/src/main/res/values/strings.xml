@@ -61,6 +61,8 @@
     <string name="settings_buffer_size_summary">Larger buffers improve stability but use more memory.</string>
     <string name="mb_format">%1$d <xliff:g id="mb">%2$s</xliff:g></string>
 
+    <string name="settings_show_hidden_files_title">Show hidden files</string>
+    <string name="settings_show_hidden_files_summary">Display files and folders that start with a dot or are marked hidden</string>
     <string name="settings_language_title">App Language</string>
     <string name="settings_language_summary">Choose the language for the application</string>
     <string name="language_select_title">Select Language</string>

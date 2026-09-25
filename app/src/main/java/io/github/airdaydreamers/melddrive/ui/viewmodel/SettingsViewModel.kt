@@ -25,11 +25,13 @@ class SettingsViewModel @Inject constructor(private val settingsManager: Setting
     val state: StateFlow<SettingsState> = combine(
         settingsManager.bufferingEnabled,
         settingsManager.bufferSizeMb,
+        settingsManager.showHiddenFiles,
         currentLanguageCode,
-    ) { enabled, size, lang ->
+    ) { enabled, size, showHidden, lang ->
         SettingsState(
             bufferingEnabled = enabled,
             bufferSizeMb = size,
+            showHiddenFiles = showHidden,
             currentLanguageCode = lang,
         )
     }.stateIn(
@@ -58,6 +60,12 @@ class SettingsViewModel @Inject constructor(private val settingsManager: Setting
             is SettingsIntent.SetBufferSizeMb -> {
                 viewModelScope.launch {
                     settingsManager.setBufferSizeMb(intent.sizeMb)
+                }
+            }
+
+            is SettingsIntent.SetShowHiddenFiles -> {
+                viewModelScope.launch {
+                    settingsManager.setShowHiddenFiles(intent.show)
                 }
             }
 

@@ -21,6 +21,7 @@ import io.github.airdaydreamers.melddrive.data.model.StorageException
 import io.github.airdaydreamers.melddrive.data.model.StorageType
 import io.github.airdaydreamers.melddrive.data.repository.FileRepository
 import io.github.airdaydreamers.melddrive.data.repository.ServerRepository
+import io.github.airdaydreamers.melddrive.data.storage.SettingsManager
 import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerEffect
 import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerIntent
 import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerState
@@ -43,6 +44,7 @@ import javax.inject.Inject
 class FileManagerViewModel @Inject constructor(
     private val repository: FileRepository,
     private val serverRepository: ServerRepository,
+    private val settingsManager: SettingsManager,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
@@ -62,6 +64,18 @@ class FileManagerViewModel @Inject constructor(
         serverRepository.getRemoteServers()
             .onEach { servers -> _state.update { it.copy(sidebarItems = getSidebarItems(servers)) } }
             .launchIn(viewModelScope)
+
+        settingsManager.showHiddenFiles
+            .onEach { show ->
+                val currentState = _state.value
+                if (currentState.isSearchActive && currentState.searchQuery.length >= MIN_SEARCH_QUERY_LENGTH) {
+                    searchFiles(currentState.currentPath, currentState.searchQuery, currentState.currentStorageType, currentState.currentServerId)
+                } else {
+                    loadFiles(currentState.currentPath, currentState.currentStorageType, currentState.currentServerId, show)
+                }
+            }
+            .launchIn(viewModelScope)
+
         loadFiles(_state.value.currentPath, _state.value.currentStorageType, _state.value.currentServerId)
     }
 
@@ -151,7 +165,9 @@ class FileManagerViewModel @Inject constructor(
         searchJob = viewModelScope.launch {
             _state.update { it.copy(isLoading = true, files = emptyList()) }
             try {
+                val showHidden = settingsManager.showHiddenFiles.first()
                 val files = repository.searchFiles(path, query, storageType, serverId)
+                    .filter { showHidden || !it.isHidden }
                 _state.update { it.copy(files = files, isLoading = false) }
             } catch (e: StorageException) {
                 _state.update { it.copy(isLoading = false) }
@@ -189,11 +205,13 @@ class FileManagerViewModel @Inject constructor(
         }
     }
 
-    private fun loadFiles(path: String, storageType: StorageType, serverId: Long?) {
+    private fun loadFiles(path: String, storageType: StorageType, serverId: Long?, showHidden: Boolean? = null) {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, files = emptyList(), errorMessage = null) }
             try {
+                val showHidden = showHidden ?: settingsManager.showHiddenFiles.first()
                 val files = repository.listFiles(path, storageType, serverId)
+                    .filter { showHidden || !it.isHidden }
                 _state.update { it.copy(files = files, isLoading = false) }
             } catch (e: StorageException) {
                 _state.update { it.copy(isLoading = false, errorMessage = e.message) }

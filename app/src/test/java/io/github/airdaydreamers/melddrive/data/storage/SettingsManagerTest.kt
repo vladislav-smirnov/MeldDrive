@@ -31,6 +31,7 @@ class SettingsManagerTest {
         // Ensure test isolation by resetting preferences to default values before each test
         settingsManager.setBufferingEnabled(false)
         settingsManager.setBufferSizeMb(16)
+        settingsManager.setShowHiddenFiles(false)
     }
 
     /**
@@ -52,6 +53,29 @@ class SettingsManagerTest {
 
         settingsManager.bufferSizeMb.test {
             assertEquals(SettingsManager.DEFAULT_BUFFER_SIZE_MB, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        settingsManager.showHiddenFiles.test {
+            assertFalse(awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    /**
+     * Use Case: Toggle Show Hidden Files
+     * Given showHiddenFiles is false by default
+     * When user sets showHiddenFiles to true
+     * Then the flow should emit true
+     */
+    @Test
+    fun testSetShowHiddenFiles() = runBlocking {
+        // When
+        settingsManager.setShowHiddenFiles(true)
+
+        // Then
+        settingsManager.showHiddenFiles.test {
+            assertTrue(awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
     }
