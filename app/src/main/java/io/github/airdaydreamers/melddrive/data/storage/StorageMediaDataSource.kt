@@ -16,11 +16,15 @@ class StorageMediaDataSource(
 
     @Volatile
     private var isClosed = false
+
+    @Volatile
     private var bufferStart: Long = -1L
+
+    @Volatile
     private var bufferData: ByteArray? = null
 
-    @Synchronized
     override fun readAt(position: Long, buffer: ByteArray, offset: Int, size: Int): Int {
+        if (isClosed) return EOF
         Timber.d("StorageMediaDataSource: readAt position=%d, size=%d, offset=%d, path=%s", position, size, offset, path)
         val isValidRead = !isClosed &&
             position >= 0L &&
@@ -37,12 +41,17 @@ class StorageMediaDataSource(
             fetchBufferChunk(position)
         }
 
-        val currentBuffer = if (!isClosed) bufferData else null
-        val localOffset = if (currentBuffer != null) (position - bufferStart).toInt() else 0
-        val available = if (currentBuffer != null) (currentBuffer.size - localOffset).coerceAtLeast(0) else 0
+        if (isClosed) return EOF
+
+        val currentBuffer = bufferData
+        val currentBufferStart = bufferStart
+        val localOffset = if (currentBuffer != null) (position - currentBufferStart).toInt() else 0
+        if (currentBuffer == null || localOffset < 0 || localOffset >= currentBuffer.size) return EOF
+
+        val available = (currentBuffer.size - localOffset).coerceAtLeast(0)
         val actualRead = bytesToRead.coerceAtMost(available)
 
-        return if (currentBuffer != null && actualRead > 0) {
+        return if (actualRead > 0) {
             System.arraycopy(currentBuffer, localOffset, buffer, offset, actualRead)
             actualRead
         } else {
@@ -52,8 +61,9 @@ class StorageMediaDataSource(
 
     private fun isPositionInBuffer(position: Long, requestedSize: Int): Boolean {
         val currentBuffer = bufferData ?: return false
-        val bufferEnd = bufferStart + currentBuffer.size
-        return position >= bufferStart && (position + requestedSize) <= bufferEnd
+        val currentBufferStart = bufferStart
+        val bufferEnd = currentBufferStart + currentBuffer.size
+        return position >= currentBufferStart && (position + requestedSize) <= bufferEnd
     }
 
     @Suppress("TooGenericExceptionCaught")
@@ -62,9 +72,8 @@ class StorageMediaDataSource(
         val readSize = CHUNK_SIZE.toLong().coerceAtMost(size - position).toInt()
         if (readSize <= 0) return
 
-        bufferStart = position
         Timber.d("StorageMediaDataSource: Fetching buffer chunk path=%s, position=%d, readSize=%d", path, position, readSize)
-        bufferData = try {
+        val chunk = try {
             runBlocking {
                 repository.readFile(path, position, readSize, storageType, serverId)
             }
@@ -72,12 +81,15 @@ class StorageMediaDataSource(
             Timber.e(e, "StorageMediaDataSource: Failed to fetch buffer chunk path=%s at position=%d", path, position)
             null
         }
+
+        if (!isClosed) {
+            bufferStart = position
+            bufferData = chunk
+        }
     }
 
-    @Synchronized
     override fun getSize(): Long = size
 
-    @Synchronized
     override fun close() {
         Timber.d("StorageMediaDataSource: Closing datasource for path=%s", path)
         isClosed = true
