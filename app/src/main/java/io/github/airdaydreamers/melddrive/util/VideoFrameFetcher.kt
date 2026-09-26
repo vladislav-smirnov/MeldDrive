@@ -20,6 +20,8 @@ import io.github.airdaydreamers.melddrive.data.model.StorageType
 import io.github.airdaydreamers.melddrive.data.model.VideoThumbnailModel
 import io.github.airdaydreamers.melddrive.data.repository.FileRepository
 import io.github.airdaydreamers.melddrive.data.storage.StorageMediaDataSource
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.BufferedOutputStream
 import java.util.concurrent.TimeUnit
@@ -40,10 +42,11 @@ class VideoFrameFetcher(
     @Suppress("TooGenericExceptionCaught")
     override suspend fun fetch(): FetchResult? {
         Timber.d("VideoFrameFetcher: Starting fetch for cacheKey=%s", cacheKey)
-        val cachedResult = checkDiskCache()
-        if (cachedResult != null) return cachedResult
 
         return try {
+            val cachedResult = checkDiskCache()
+            if (cachedResult != null) return cachedResult
+
             MediaMetadataRetriever().use { retriever ->
                 retriever.setDataSource()
 
@@ -69,7 +72,9 @@ class VideoFrameFetcher(
             null
         } finally {
             try {
-                dataSource?.close()
+                withContext(Dispatchers.IO) {
+                    dataSource?.close()
+                }
             } catch (_: Exception) {}
         }
     }
