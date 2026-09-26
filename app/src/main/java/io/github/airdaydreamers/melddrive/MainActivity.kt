@@ -1,7 +1,9 @@
 package io.github.airdaydreamers.melddrive
 
 import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.webkit.MimeTypeMap
@@ -47,6 +49,11 @@ class MainActivity : AppCompatActivity() {
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (isXrDeviceOrHeadset()) {
+            Timber.i("MainActivity: Current device is XR device or headset")
+        }
+
         enableEdgeToEdge()
 
         checkPermissions()
@@ -142,6 +149,26 @@ class MainActivity : AppCompatActivity() {
 
     private val applicationId: String
         get() = packageName
+
+    fun Context.isXrDeviceOrHeadset(): Boolean {
+        val pm = packageManager
+
+        val hasVrFeature = pm.hasSystemFeature("android.hardware.vr.headset") ||
+            pm.hasSystemFeature("android.software.vr.mode")
+
+        val model = Build.MODEL.lowercase()
+        val manufacturer = Build.MANUFACTURER.lowercase()
+        val isMetaQuest = model.contains("quest") ||
+            model.contains("oculus") ||
+            manufacturer.contains("meta") ||
+            manufacturer.contains("oculus")
+
+        val hasXrRuntime = pm.hasSystemFeature("android.software.xr.immersive") ||
+            pm.hasSystemFeature("android.hardware.type.xr")
+
+        Timber.i("isXrDeviceOrHeadset: hasVrFeature=$hasVrFeature, isMetaQuest=$isMetaQuest, hasXrRuntime=$hasXrRuntime")
+        return hasVrFeature || isMetaQuest || hasXrRuntime
+    }
 }
 
 @Composable
