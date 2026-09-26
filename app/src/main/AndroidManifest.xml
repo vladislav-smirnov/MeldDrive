@@ -46,6 +46,11 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- Phones are ignored this info -->
+            <layout
+                android:defaultHeight="640dp"
+                android:defaultWidth="1024dp" />
         </activity>
 
         <provider
