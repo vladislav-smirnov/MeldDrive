@@ -1,0 +1,35 @@
+name: ✨ Feature Request
+description: Suggest a new idea, functionality, or architectural improvement
+title: "[Feature]: "
+labels: ["enhancement",  "feature"]
+type: feature
+body:
+    - type: markdown
+      attributes:
+          value: |
+              Before creating a request, please ensure a similar feature hasn't been requested already in the Issues section.
+    - type: textarea
+      id: problem
+      attributes:
+          label: What problem does this feature solve?
+          description: Describe the use case. Why is the current functionality insufficient?
+      validations:
+          required: true
+    - type: textarea
+      id: solution
+      attributes:
+          label: Proposed Solution
+          description: Describe how you envision this feature working (UI/UX, API changes, or architecture).
+      validations:
+          required: true
+    - type: textarea
+      id: alternatives
+      attributes:
+          label: Alternatives Considered
+          description: Have you considered any alternative solutions or workarounds?
+    - type: checkboxes
+      id: pr-willingness
+      attributes:
+          label: Willingness to Contribute
+          options:
+              - label: I am willing to submit a Pull Request to implement this feature.
