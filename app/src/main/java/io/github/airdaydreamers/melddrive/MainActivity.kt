@@ -83,12 +83,12 @@ class MainActivity : AppCompatActivity() {
                         }
                         entry<AddStorage> {
                             AddStorageScreen(
-                                onBack = { backStack.removeLastOrNull() },
-                                onSuccess = { backStack.removeLastOrNull() },
+                                onBack = { popBackStack(backStack) },
+                                onSuccess = { popBackStack(backStack) },
                             )
                         }
                         entry<MeldDriveSettings> {
-                            SettingsScreen(onBack = { backStack.removeLastOrNull() })
+                            SettingsScreen(onBack = { popBackStack(backStack) })
                         }
                     }
 
@@ -99,7 +99,7 @@ class MainActivity : AppCompatActivity() {
                             rememberSaveableStateHolderNavEntryDecorator(),
                             rememberViewModelStoreNavEntryDecorator(),
                         ),
-                        onBack = { backStack.removeLastOrNull() },
+                        onBack = { popBackStack(backStack) },
                     )
                 }
             }
@@ -168,6 +168,12 @@ class MainActivity : AppCompatActivity() {
 
         Timber.i("isXrDeviceOrHeadset: hasVrFeature=$hasVrFeature, isMetaQuest=$isMetaQuest, hasXrRuntime=$hasXrRuntime")
         return hasVrFeature || isMetaQuest || hasXrRuntime
+    }
+
+    private fun popBackStack(backStack: NavBackStack<MeldDriveKey>) {
+        if (backStack.size > 1) {
+            backStack.removeLastOrNull()
+        }
     }
 }
 
