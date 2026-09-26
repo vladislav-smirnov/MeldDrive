@@ -65,7 +65,7 @@ class VideoFrameFetcher(
                 }
             }
         } catch (e: Exception) {
-            Timber.e(e, "VideoFrameFetcher: Error fetching frame for cacheKey=%s", cacheKey)
+            Timber.w(e, "VideoFrameFetcher: Could not fetch frame for cacheKey=%s", cacheKey)
             null
         } finally {
             try {
@@ -195,7 +195,8 @@ class VideoFrameFetcher(
     class ModelFactory(private val repository: FileRepository) : Fetcher.Factory<VideoThumbnailModel> {
         override fun create(data: VideoThumbnailModel, options: Options, imageLoader: ImageLoader): Fetcher? {
             val file = data.file
-            if (file.isDirectory || !MimeTypeMapCompat.isVideoFile(file.name)) {
+            val fileName = file.name.substringAfterLast('/')
+            if (file.isDirectory || fileName.startsWith("._") || !MimeTypeMapCompat.isVideoFile(file.name)) {
                 return null
             }
 
@@ -221,8 +222,14 @@ class VideoFrameFetcher(
     }
 
     class UriFactory(private val context: Context) : Fetcher.Factory<Uri> {
+        @Suppress("ReturnCount")
         override fun create(data: Uri, options: Options, imageLoader: ImageLoader): Fetcher? {
             val scheme = data.scheme
+            val fileName = data.lastPathSegment?.substringAfterLast('/') ?: ""
+            if (fileName.startsWith("._")) {
+                return null
+            }
+
             val mimeType = context.contentResolver.getType(data) ?: MimeTypeMapCompat.getMimeType(data.toString())
             val isSupportedScheme = scheme == "content" || scheme == "file"
             val isVideo = MimeTypeMapCompat.isVideoFile(data.toString()) || mimeType.startsWith("video/")

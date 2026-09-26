@@ -117,4 +117,26 @@ class VideoFrameFetcherTest {
 
         assertNull(fetcher)
     }
+
+    /**
+     * Use Case: Reject AppleDouble files (._ prefix) in ModelFactory
+     * Given a VideoThumbnailModel representing an AppleDouble metadata file
+     * When ModelFactory.create is called
+     * Then it should return null
+     */
+    @Test
+    fun testModelFactoryRejectsAppleDoubleFiles() {
+        val modelFactory = VideoFrameFetcher.ModelFactory(repository)
+        val appleDoubleItem = FileItem(
+            path = "/storage/emulated/0/Movies/._CaptainAmerica.mkv",
+            name = "._CaptainAmerica.mkv",
+            isDirectory = false,
+            storageType = StorageType.LOCAL,
+        )
+        val model = VideoThumbnailModel(file = appleDoubleItem)
+
+        val fetcher = modelFactory.create(model, options, imageLoader)
+
+        assertNull(fetcher)
+    }
 }
