@@ -1,0 +1,39 @@
+name: 🛠️ Engineering Task
+description: Tech debt, refactoring, CI/CD, library updates, or internal improvements
+title: "[Task]: "
+labels: ["refactor"]
+type: task
+body:
+    - type: textarea
+      id: context
+      attributes:
+          label: Context & Description
+          description: Why does this need to be done? (e.g., "Update AGP to 8.5" or "Refactor NetworkClient class")
+      validations:
+          required: true
+    - type: textarea
+      id: acceptance-criteria
+      attributes:
+          label: Acceptance Criteria (Definition of Done)
+          description: What must be completed for this task to be considered done?
+          value: |
+              - [ ]
+              - [ ] Tests updated/added
+      validations:
+          required: true
+    - type: input
+      id: related-issues
+      attributes:
+          label: Related Issues / Epics
+          description: Mention any related issue numbers (e.g., #42, #105) if this task blocks or relates to them.
+    - type: dropdown
+      id: impact
+      attributes:
+          label: Impact Level
+          description: How extensive are these changes?
+          options:
+              - "Low (Local changes, no risk)"
+              - "Medium (Touches multiple modules)"
+              - "High (Affects core architecture, build system, or CI)"
+      validations:
+          required: true
