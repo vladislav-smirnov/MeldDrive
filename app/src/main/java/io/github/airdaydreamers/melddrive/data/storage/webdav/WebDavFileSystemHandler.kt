@@ -1,8 +1,5 @@
 package io.github.airdaydreamers.melddrive.data.storage.webdav
 
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
 import io.github.airdaydreamers.melddrive.data.db.RemoteServer
 import io.github.airdaydreamers.melddrive.data.model.FileItem
 import io.github.airdaydreamers.melddrive.data.model.StorageException
@@ -36,17 +33,12 @@ import java.util.TimeZone
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.parsers.ParserConfigurationException
 
-open class WebDavFileSystemHandler @AssistedInject constructor(@Assisted private val server: RemoteServer, private val client: OkHttpClient) : StorageSource {
+open class WebDavFileSystemHandler(private val server: RemoteServer, private val client: OkHttpClient = WebDavHttpClientFactory.createClient(server)) :
+    StorageSource {
 
-    @AssistedFactory
-    interface Factory {
+    fun interface Factory {
         fun create(server: RemoteServer): WebDavFileSystemHandler
     }
-
-    constructor(server: RemoteServer) : this(
-        server = server,
-        client = WebDavHttpClientFactory.createClient(server),
-    )
 
     private val baseUrl: String by lazy { buildBaseUrl(server) }
 
@@ -255,12 +247,43 @@ open class WebDavFileSystemHandler @AssistedInject constructor(@Assisted private
                     Timber.e("WebDavFileSystemHandler: readFile failed HTTP code=%d message='%s' body='%s'", response.code, response.message, errorBody)
                     return@use ByteArray(0)
                 }
-                response.body?.bytes() ?: ByteArray(0)
+                val body = response.body ?: return@use ByteArray(0)
+                if (response.code == HTTP_OK) {
+                    readStreamSlice(body, offset, length)
+                } else {
+                    body.bytes()
+                }
             }
         } catch (e: IOException) {
             Timber.e(e, "WebDavFileSystemHandler: readFile IOException for path='%s' range='%s'", path, rangeHeader)
             ByteArray(0)
         }
+    }
+
+    private fun readStreamSlice(body: okhttp3.ResponseBody, offset: Long, length: Int): ByteArray = body.byteStream().use { inputStream ->
+        if (!skipFully(inputStream, offset)) return@use ByteArray(0)
+        readBytesUpTo(inputStream, length)
+    }
+
+    private fun skipFully(inputStream: java.io.InputStream, bytesToSkip: Long): Boolean {
+        var skipped = 0L
+        while (skipped < bytesToSkip) {
+            val s = inputStream.skip(bytesToSkip - skipped)
+            if (s <= 0) return false
+            skipped += s
+        }
+        return true
+    }
+
+    private fun readBytesUpTo(inputStream: java.io.InputStream, length: Int): ByteArray {
+        val buffer = ByteArray(length)
+        var totalRead = 0
+        while (totalRead < length) {
+            val read = inputStream.read(buffer, totalRead, length - totalRead)
+            if (read == -1) break
+            totalRead += read
+        }
+        return if (totalRead == length) buffer else buffer.copyOf(totalRead)
     }
 
     override suspend fun searchFiles(path: String, query: String): List<FileItem> = withContext(Dispatchers.IO) {
@@ -305,6 +328,11 @@ open class WebDavFileSystemHandler @AssistedInject constructor(@Assisted private
             return emptyList()
         }
 
+        if (xmlBody.contains("<!DOCTYPE", ignoreCase = true)) {
+            logXmlSnippet(xmlBody, "DOCTYPE declaration disallowed in PROPFIND XML response")
+            return emptyList()
+        }
+
         return try {
             val doc = parseXmlDocument(xmlBody)
             val responseNodes = getResponseNodes(doc)
@@ -330,6 +358,11 @@ open class WebDavFileSystemHandler @AssistedInject constructor(@Assisted private
     private fun parseXmlDocument(xmlBody: String): Document {
         val factory = DocumentBuilderFactory.newInstance()
         factory.isNamespaceAware = true
+        try {
+            factory.isExpandEntityReferences = false
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false)
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false)
+        } catch (_: Exception) {}
         val builder = factory.newDocumentBuilder()
         return builder.parse(InputSource(StringReader(xmlBody)))
     }
@@ -498,6 +531,7 @@ open class WebDavFileSystemHandler @AssistedInject constructor(@Assisted private
     )
 
     companion object {
+        private const val HTTP_OK = 200
         private const val HTTP_CREATED = 201
         private const val HTTP_ACCEPTED = 202
         private const val HTTP_NO_CONTENT = 204

@@ -198,5 +198,57 @@ class WebDavFileSystemHandlerTest {
         assertTrue(result)
     }
 
+    @Test
+    fun testReadFileFullContentFallback() = runBlocking {
+        // Given a server returning 200 OK with full file content instead of 206 Partial Content
+        val fullData = "0123456789abcdefghijklmnopqrstuvwxyz".toByteArray()
+        server.enqueue(MockResponse().setResponseCode(200).setBody(bufferOf(fullData)))
+
+        // When reading from offset 10 with length 6 ("abcdef")
+        val bytes = handler.readFile("media/video.mp4", 10L, 6)
+
+        // Then it reads only the requested slice
+        assertArrayEquals("abcdef".toByteArray(), bytes)
+    }
+
+    @Test
+    fun testDisallowDoctypeXml() = runBlocking {
+        // Given a malicious PROPFIND response containing DOCTYPE
+        val xmlWithDoctype = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <!DOCTYPE test [ <!ENTITY xxe SYSTEM "file:///etc/passwd"> ]>
+            <D:multistatus xmlns:D="DAV:">
+                <D:response><D:href>/secret</D:href></D:response>
+            </D:multistatus>
+        """.trimIndent()
+        server.enqueue(MockResponse().setResponseCode(207).setBody(xmlWithDoctype))
+
+        // When
+        val items = handler.listFiles("")
+
+        // Then DOCTYPE response is safely rejected
+        assertTrue(items.isEmpty())
+    }
+
+    @Test
+    fun testCrossHostAuthenticatorRejects() {
+        val auth = io.github.airdaydreamers.melddrive.data.storage.webdav.WebDavAuthenticator(
+            expectedHost = "trusted.com",
+            username = "user",
+            password = "password",
+        )
+        val request = okhttp3.Request.Builder().url("http://attacker.com/dav").build()
+        val response = okhttp3.Response.Builder()
+            .request(request)
+            .protocol(okhttp3.Protocol.HTTP_1_1)
+            .code(401)
+            .message("Unauthorized")
+            .header("WWW-Authenticate", "Basic realm=\"evil\"")
+            .build()
+
+        val authenticated = auth.authenticate(null, response)
+        org.junit.jupiter.api.Assertions.assertNull(authenticated)
+    }
+
     private fun bufferOf(data: ByteArray): okio.Buffer = okio.Buffer().write(data)
 }

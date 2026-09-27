@@ -56,6 +56,10 @@ object TestAppModule {
 
     @Provides
     @Singleton
+    fun provideWebDavFileSystemHandlerFactory(): WebDavFileSystemHandler.Factory = WebDavFileSystemHandler.Factory { server -> WebDavFileSystemHandler(server) }
+
+    @Provides
+    @Singleton
     fun provideFileRepository(
         remoteServerDao: RemoteServerDao,
         credentialStorage: CredentialStorage,

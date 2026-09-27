@@ -5,6 +5,7 @@ import io.github.airdaydreamers.melddrive.data.db.RemoteServer
 import okhttp3.Authenticator
 import okhttp3.Challenge
 import okhttp3.Credentials
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -27,24 +28,25 @@ object WebDavHttpClientFactory {
 
     fun createClient(server: RemoteServer): OkHttpClient {
         Timber.d(
-            "WebDavHttpClientFactory: createClient serverId=%d host='%s' port=%d isAnonymous=%b trustSelfSigned=%b username='%s'",
+            "WebDavHttpClientFactory: createClient serverId=%d port=%d isAnonymous=%b trustSelfSigned=%b",
             server.id,
-            server.host,
             server.port,
             server.isAnonymous,
             server.trustSelfSigned,
-            server.username,
         )
 
         val builder = OkHttpClient.Builder()
             .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .followRedirects(false)
+            .followSslRedirects(false)
 
         if (!server.isAnonymous && !server.username.isNullOrEmpty()) {
             val username = server.username
             val password = server.password ?: ""
-            builder.authenticator(WebDavAuthenticator(username, password))
+            val expectedHost = extractHost(server.host)
+            builder.authenticator(WebDavAuthenticator(expectedHost, username, password))
         }
 
         if (server.trustSelfSigned) {
@@ -52,6 +54,16 @@ object WebDavHttpClientFactory {
         }
 
         return builder.build()
+    }
+
+    private fun extractHost(rawHost: String): String {
+        val trimmed = rawHost.trim()
+        val withScheme = if (!trimmed.startsWith("http://", ignoreCase = true) && !trimmed.startsWith("https://", ignoreCase = true)) {
+            "http://$trimmed"
+        } else {
+            trimmed
+        }
+        return withScheme.toHttpUrlOrNull()?.host ?: trimmed.substringBefore('/').substringBefore(':')
     }
 
     private fun configureSelfSignedSsl(builder: OkHttpClient.Builder) {
@@ -83,13 +95,18 @@ object WebDavHttpClientFactory {
     }
 }
 
-class WebDavAuthenticator(private val username: String, private val password: String) : Authenticator {
+class WebDavAuthenticator(private val expectedHost: String, private val username: String, private val password: String) : Authenticator {
 
     private var ncCount = 0
 
     override fun authenticate(route: Route?, response: Response): Request? {
         val requestUrl = response.request.url
         Timber.d("WebDavAuthenticator: Received 401 for %s", requestUrl)
+
+        if (expectedHost.isNotEmpty() && !requestUrl.host.equals(expectedHost, ignoreCase = true)) {
+            Timber.w("WebDavAuthenticator: Skipping auth for unexpected host: %s (expected %s)", requestUrl.host, expectedHost)
+            return null
+        }
 
         if (responseCount(response) >= MAX_RETRY_COUNT) {
             Timber.w("WebDavAuthenticator: Max auth retries reached (%d) for %s", MAX_RETRY_COUNT, requestUrl)
@@ -107,7 +124,7 @@ class WebDavAuthenticator(private val username: String, private val password: St
         val digestChallenge = challenges.firstOrNull { it.scheme.equals("Digest", ignoreCase = true) }
         val authHeader = if (digestChallenge != null) buildDigestHeader(digestChallenge, request) else null
         return if (authHeader != null) {
-            Timber.d("WebDavAuthenticator: Responding with Digest auth header for user '%s'", username)
+            Timber.d("WebDavAuthenticator: Responding with Digest auth header")
             request.newBuilder()
                 .header("Authorization", authHeader)
                 .build()
@@ -124,7 +141,7 @@ class WebDavAuthenticator(private val username: String, private val password: St
         }
 
         val credential = Credentials.basic(username, password)
-        Timber.d("WebDavAuthenticator: Responding with Basic auth header for user '%s'", username)
+        Timber.d("WebDavAuthenticator: Responding with Basic auth header")
         return request.newBuilder()
             .header("Authorization", credential)
             .build()
