@@ -49,6 +49,7 @@ class MeldDriveUiTest {
     lateinit var settingsManager: SettingsManager
 
     companion object {
+        private const val SAVE_NAVIGATION_TIMEOUT_MS = 30_000L
         private val fakeSmbServer = FakeSmbServer(4445)
 
         @JvmStatic
@@ -174,8 +175,11 @@ class MeldDriveUiTest {
         // Connect & Save
         composeTestRule.onNodeWithTag("connect_save_button").performClick()
 
-        // Wait for connection to succeed and navigate back
-        composeTestRule.waitForIdle()
+        // Wait for the asynchronous save operation to navigate back
+        composeTestRule.waitUntil(SAVE_NAVIGATION_TIMEOUT_MS) {
+            composeTestRule.onAllNodes(androidx.compose.ui.test.hasTestTag("search_button"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
 
         // Verify it navigated back by checking search button in TopBar
         composeTestRule.onNodeWithTag("search_button").assertIsDisplayed()
@@ -208,8 +212,11 @@ class MeldDriveUiTest {
         // Connect & Save
         composeTestRule.onNodeWithTag("connect_save_button").performClick()
 
-        // Wait for connection to succeed and navigate back
-        composeTestRule.waitForIdle()
+        // Wait for the asynchronous save operation to navigate back
+        composeTestRule.waitUntil(SAVE_NAVIGATION_TIMEOUT_MS) {
+            composeTestRule.onAllNodes(androidx.compose.ui.test.hasTestTag("search_button"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
 
         // Verify it navigated back
         composeTestRule.onNodeWithTag("search_button").assertIsDisplayed()
