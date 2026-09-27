@@ -251,7 +251,9 @@ open class WebDavFileSystemHandler(private val server: RemoteServer, private val
                 if (response.code == HTTP_OK) {
                     readStreamSlice(body, offset, length)
                 } else {
-                    body.bytes()
+                    body.byteStream().use { inputStream ->
+                        readBytesUpTo(inputStream, length)
+                    }
                 }
             }
         } catch (e: IOException) {

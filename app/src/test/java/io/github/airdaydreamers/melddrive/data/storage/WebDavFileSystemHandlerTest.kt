@@ -136,6 +136,20 @@ class WebDavFileSystemHandlerTest {
         assertArrayEquals(mockData, bytes)
     }
 
+    @Test
+    fun testReadFileRangeBounded() = runBlocking {
+        // Given a server returning HTTP 206 with body larger than requested length
+        val fullData = "Hello WebDAV Range Stream".toByteArray()
+        server.enqueue(MockResponse().setResponseCode(206).setBody(bufferOf(fullData)))
+
+        // When requesting only 5 bytes
+        val bytes = handler.readFile("media/video.mp4", 100L, 5)
+
+        // Then it reads at most 5 bytes instead of the full response body
+        val expected = "Hello".toByteArray()
+        assertArrayEquals(expected, bytes)
+    }
+
     /**
      * Use Case: Create folder via MKCOL
      * Given a parent path and new folder name
