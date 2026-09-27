@@ -1,5 +1,6 @@
 package io.github.airdaydreamers.melddrive.ui.mvi
 
+import io.github.airdaydreamers.melddrive.data.discovery.DiscoveredServer
 private const val DEFAULT_PORT_SMB = 445
 private const val DEFAULT_PORT_WEBDAV = 80
 
@@ -18,6 +19,8 @@ data class AddStorageState(
     val isAnonymous: Boolean = false,
     val trustSelfSigned: Boolean = false,
     val isLoading: Boolean = false,
+    val isDiscovering: Boolean = false,
+    val discoveredServers: List<DiscoveredServer> = emptyList(),
     val error: String? = null,
     val isSuccess: Boolean = false,
 )
@@ -32,4 +35,6 @@ sealed interface AddStorageIntent {
     data class AnonymousChange(val value: Boolean) : AddStorageIntent
     data class TrustSelfSignedChange(val value: Boolean) : AddStorageIntent
     data object SaveServer : AddStorageIntent
+    data object StartDiscovery : AddStorageIntent
+    data class SelectDiscoveredServer(val server: DiscoveredServer) : AddStorageIntent
 }

@@ -1,5 +1,6 @@
 package io.github.airdaydreamers.melddrive.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -14,7 +15,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Dns
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -22,6 +27,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -37,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.airdaydreamers.melddrive.R
+import io.github.airdaydreamers.melddrive.data.discovery.DiscoveredServer
 import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageIntent
 import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageState
 import io.github.airdaydreamers.melddrive.ui.mvi.ServerType
@@ -95,6 +102,8 @@ private fun AddStorageForm(state: AddStorageState, onIntent: (AddStorageIntent) 
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        DiscoveredServersSection(state, onIntent)
+
         AddStorageFields(state, onIntent)
 
         if (state.error != null) {
@@ -102,6 +111,96 @@ private fun AddStorageForm(state: AddStorageState, onIntent: (AddStorageIntent) 
         }
 
         AddStorageButtons(state, onIntent)
+    }
+}
+
+@Composable
+private fun DiscoveredServersSection(state: AddStorageState, onIntent: (AddStorageIntent) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.discovered_servers_title),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            OutlinedButton(
+                onClick = { onIntent(AddStorageIntent.StartDiscovery) },
+                enabled = !state.isDiscovering,
+                modifier = Modifier.testTag("scan_network_button"),
+            ) {
+                if (state.isDiscovering) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.scanning_network))
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.btn_scan_network))
+                }
+            }
+        }
+
+        if (state.discoveredServers.isEmpty()) {
+            Text(
+                text = stringResource(R.string.no_servers_found),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                state.discoveredServers.forEach { server ->
+                    DiscoveredServerItem(server = server, onSelect = {
+                        onIntent(AddStorageIntent.SelectDiscoveredServer(server))
+                    })
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DiscoveredServerItem(server: DiscoveredServer, onSelect: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onSelect() }
+            .testTag("discovered_server_${server.host}"),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        ),
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Default.Dns,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = server.name,
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Text(
+                    text = "${server.type.name} • ${server.host}:${server.port}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
     }
 }
 

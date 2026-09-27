@@ -3,6 +3,9 @@ package io.github.airdaydreamers.melddrive.ui.viewmodel
 import android.content.Context
 import app.cash.turbine.test
 import io.github.airdaydreamers.melddrive.R
+import io.github.airdaydreamers.melddrive.data.discovery.DiscoveredServer
+import io.github.airdaydreamers.melddrive.data.model.StorageType
+import io.github.airdaydreamers.melddrive.data.repository.ServerDiscoveryRepository
 import io.github.airdaydreamers.melddrive.data.repository.ServerRepository
 import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageIntent
 import io.github.airdaydreamers.melddrive.ui.mvi.ServerType
@@ -11,6 +14,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -25,13 +29,14 @@ import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for [AddStorageViewModel] verifying form updates, validation logic,
- * and remote server persistence workflows via [ServerRepository].
+ * server discovery, and remote server persistence workflows via [ServerRepository] and [ServerDiscoveryRepository].
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class AddStorageViewModelTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var serverRepository: ServerRepository
+    private lateinit var serverDiscoveryRepository: ServerDiscoveryRepository
     private lateinit var mockContext: Context
     private lateinit var viewModel: AddStorageViewModel
 
@@ -39,9 +44,12 @@ class AddStorageViewModelTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         serverRepository = mockk(relaxed = true)
+        serverDiscoveryRepository = mockk(relaxed = true)
         mockContext = mockk(relaxed = true)
         every { mockContext.getString(R.string.error_host_display_mandatory) } returns "Host and Display Name are mandatory"
-        viewModel = AddStorageViewModel(serverRepository, mockContext)
+        every { serverDiscoveryRepository.discoverServers(any()) } returns flowOf(emptyList())
+
+        viewModel = AddStorageViewModel(serverRepository, serverDiscoveryRepository, mockContext)
     }
 
     @AfterEach
@@ -93,6 +101,50 @@ class AddStorageViewModelTest {
         assertEquals("bob", state.username)
         assertEquals("secret", state.password)
         assertFalse(state.isAnonymous)
+    }
+
+    /**
+     * Use Case: Select Discovered Server
+     * Given a discovered server item
+     * When SelectDiscoveredServer intent is dispatched
+     * Then the form state fields should be automatically populated
+     */
+    @Test
+    fun testSelectDiscoveredServer() {
+        // Given
+        val discoveredServer = DiscoveredServer("Home NAS", "192.168.1.150", 445, StorageType.SMB)
+
+        // When
+        viewModel.onIntent(AddStorageIntent.SelectDiscoveredServer(discoveredServer))
+
+        // Then
+        val state = viewModel.state.value
+        assertEquals(ServerType.SMB, state.serverType)
+        assertEquals("Home NAS", state.displayName)
+        assertEquals("192.168.1.150", state.host)
+        assertEquals("445", state.port)
+    }
+
+    /**
+     * Use Case: Start Network Server Discovery
+     * Given discovery repository emits discovered servers
+     * When StartDiscovery intent is dispatched
+     * Then state should update with discovered servers
+     */
+    @Test
+    fun testStartDiscovery() {
+        // Given
+        val server = DiscoveredServer("Media Server", "192.168.1.200", 80, StorageType.WEBDAV)
+        every { serverDiscoveryRepository.discoverServers(any()) } returns flowOf(listOf(server))
+
+        // When
+        viewModel.onIntent(AddStorageIntent.StartDiscovery)
+
+        // Then
+        val state = viewModel.state.value
+        assertEquals(1, state.discoveredServers.size)
+        assertEquals("Media Server", state.discoveredServers[0].name)
+        assertFalse(state.isDiscovering)
     }
 
     /**
