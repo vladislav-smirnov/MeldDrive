@@ -27,7 +27,15 @@ enum class SidebarItemType {
     ADD_STORAGE,
 }
 
-data class SidebarItem(val id: String, val title: String, val path: String?, val type: SidebarItemType, val icon: ImageVector, val serverId: Long? = null)
+data class SidebarItem(
+    val id: String,
+    val title: String,
+    val path: String?,
+    val type: SidebarItemType,
+    val icon: ImageVector,
+    val serverId: Long? = null,
+    val storageType: StorageType? = null,
+)
 
 open class MeldDriveException(message: String, cause: Throwable? = null) : Exception(message, cause)
 class StorageException(message: String, cause: Throwable? = null) : MeldDriveException(message, cause)

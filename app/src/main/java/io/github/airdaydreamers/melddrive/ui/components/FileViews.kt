@@ -44,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -162,15 +163,8 @@ fun FileCardGrid(
 fun FileCardItem(file: FileItem, isSelected: Boolean, onClick: () -> Unit, onLongClick: () -> Unit, serverId: Long? = null) {
     val context = LocalContext.current
     val formattedSize = remember(file.size, file.isDirectory) {
-        if (file.isDirectory) {
-            ""
-        } else {
-            Formatter.formatShortFileSize(context, file.size)
-        }
+        if (file.isDirectory) "" else Formatter.formatShortFileSize(context, file.size)
     }
-
-    val isVideo = !file.isDirectory && MimeTypeMapCompat.isVideoFile(file.name)
-    val isImage = !file.isDirectory && MimeTypeMapCompat.isImageFile(file.name)
 
     Card(
         colors = CardDefaults.cardColors(
@@ -180,102 +174,116 @@ fun FileCardItem(file: FileItem, isSelected: Boolean, onClick: () -> Unit, onLon
         modifier = Modifier
             .padding(6.dp)
             .aspectRatio(1f)
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick,
-            )
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .testTag("file_item_${file.name}"),
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            if (isVideo) {
-                VideoThumbnail(
-                    file = file,
-                    serverId = serverId,
-                    iconSize = 48.dp,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            } else if (isImage) {
-                val imageUri = remember(file, serverId) {
-                    FileStreamProvider.buildUri(file.storageType, serverId, file.path)
-                }
-                AsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(imageUri)
-                        .memoryCachePolicy(CachePolicy.ENABLED)
-                        .diskCachePolicy(CachePolicy.ENABLED)
-                        .build(),
-                    contentDescription = file.name,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            } else if (file.isDirectory) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Folder,
-                        contentDescription = null,
-                        modifier = Modifier.size(56.dp),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                }
-            } else {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Description,
-                        contentDescription = null,
-                        modifier = Modifier.size(56.dp),
-                        tint = MaterialTheme.colorScheme.outline,
-                    )
-                }
-            }
+        FileCardContent(file = file, formattedSize = formattedSize, serverId = serverId)
+    }
+}
 
-            // Top-right file size
-            if (formattedSize.isNotEmpty()) {
-                Text(
-                    text = formattedSize,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(top = 8.dp, end = 8.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-                            shape = RoundedCornerShape(4.dp),
-                        )
-                        .padding(horizontal = 6.dp, vertical = 2.dp),
-                )
-            }
+@Composable
+private fun FileCardContent(file: FileItem, formattedSize: String, serverId: Long?) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        FileCardThumbnail(file = file, serverId = serverId)
 
-            // Bottom item name with scrim gradient
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
-                            ),
-                        ),
-                    )
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-            ) {
-                Text(
-                    text = file.name,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Start,
-                )
-            }
+        if (formattedSize.isNotEmpty()) {
+            FileCardSizeBadge(formattedSize = formattedSize, modifier = Modifier.align(Alignment.TopEnd))
         }
+
+        FileCardNameOverlay(name = file.name, modifier = Modifier.align(Alignment.BottomCenter))
+    }
+}
+
+@Composable
+private fun FileCardThumbnail(file: FileItem, serverId: Long?) {
+    val context = LocalContext.current
+    val isVideo = !file.isDirectory && MimeTypeMapCompat.isVideoFile(file.name)
+    val isImage = !file.isDirectory && MimeTypeMapCompat.isImageFile(file.name)
+
+    when {
+        isVideo -> VideoThumbnail(
+            file = file,
+            serverId = serverId,
+            iconSize = 48.dp,
+            modifier = Modifier.fillMaxSize(),
+        )
+
+        isImage -> {
+            val imageUri = remember(file, serverId) {
+                FileStreamProvider.buildUri(file.storageType, serverId, file.path)
+            }
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(imageUri)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .build(),
+                contentDescription = file.name,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+
+        file.isDirectory -> FileCardIcon(icon = Icons.Default.Folder, tint = MaterialTheme.colorScheme.primary)
+
+        else -> FileCardIcon(icon = Icons.Default.Description, tint = MaterialTheme.colorScheme.outline)
+    }
+}
+
+@Composable
+private fun FileCardIcon(icon: ImageVector, tint: Color) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(56.dp),
+            tint = tint,
+        )
+    }
+}
+
+@Composable
+private fun FileCardSizeBadge(formattedSize: String, modifier: Modifier = Modifier) {
+    Text(
+        text = formattedSize,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = modifier
+            .padding(top = 8.dp, end = 8.dp)
+            .background(
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                shape = RoundedCornerShape(4.dp),
+            )
+            .padding(horizontal = 6.dp, vertical = 2.dp),
+    )
+}
+
+@Composable
+private fun FileCardNameOverlay(name: String, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color.Transparent,
+                        MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+                    ),
+                ),
+            )
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+    ) {
+        Text(
+            text = name,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Start,
+        )
     }
 }
 

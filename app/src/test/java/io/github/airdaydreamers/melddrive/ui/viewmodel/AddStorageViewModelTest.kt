@@ -6,6 +6,7 @@ import io.github.airdaydreamers.melddrive.R
 import io.github.airdaydreamers.melddrive.data.repository.ServerRepository
 import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageEffect
 import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageIntent
+import io.github.airdaydreamers.melddrive.ui.mvi.ServerType
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -47,6 +48,26 @@ class AddStorageViewModelTest {
     @AfterEach
     fun tearDown() {
         Dispatchers.resetMain()
+    }
+
+    /**
+     * Use Case: Server Type Change Updates Default Port
+     * Given the add storage form is open
+     * When ServerTypeChange intent is dispatched
+     * Then serverType and port should be updated based on the enum default port
+     */
+    @Test
+    fun testServerTypeChangeUpdatesPort() {
+        // Given default is SMB with port 445
+        assertEquals(ServerType.SMB, viewModel.state.value.serverType)
+        assertEquals("445", viewModel.state.value.port)
+
+        // When switching to WEBDAV
+        viewModel.onIntent(AddStorageIntent.ServerTypeChange(ServerType.WEBDAV))
+
+        // Then
+        assertEquals(ServerType.WEBDAV, viewModel.state.value.serverType)
+        assertEquals("80", viewModel.state.value.port)
     }
 
     /**

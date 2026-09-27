@@ -1,5 +1,6 @@
 package io.github.airdaydreamers.melddrive.data.repository
 
+import io.github.airdaydreamers.melddrive.data.db.RemoteServer
 import io.github.airdaydreamers.melddrive.data.db.RemoteServerDao
 import io.github.airdaydreamers.melddrive.data.model.FileItem
 import io.github.airdaydreamers.melddrive.data.model.StorageException
@@ -8,6 +9,7 @@ import io.github.airdaydreamers.melddrive.data.security.CredentialStorage
 import io.github.airdaydreamers.melddrive.data.storage.LocalFileSystemHandler
 import io.github.airdaydreamers.melddrive.data.storage.SmbFileSystemHandler
 import io.github.airdaydreamers.melddrive.data.storage.StorageSource
+import io.github.airdaydreamers.melddrive.data.storage.webdav.WebDavFileSystemHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -21,12 +23,13 @@ open class FileRepository @Inject constructor(
     private val credentialStorage: CredentialStorage,
     private val localHandler: LocalFileSystemHandler,
     private val smbHandlerFactory: SmbFileSystemHandler.Factory,
+    private val webDavHandlerFactory: WebDavFileSystemHandler.Factory,
 ) {
 
-    private val smbHandlers = ConcurrentHashMap<Long, StorageSource>()
+    private val remoteHandlers = ConcurrentHashMap<Long, StorageSource>()
 
     fun clearHandler(serverId: Long) {
-        smbHandlers.remove(serverId)
+        remoteHandlers.remove(serverId)
     }
 
     private suspend fun getHandler(storageType: StorageType, serverId: Long?): StorageSource = withContext(Dispatchers.IO) {
@@ -35,29 +38,34 @@ open class FileRepository @Inject constructor(
             StorageType.LOCAL -> localHandler
 
             StorageType.SMB -> {
-                serverId?.let { id ->
-                    smbHandlers.getOrPut(id) {
-                        val server = remoteServerDao.getServerById(id) ?: throw StorageException("Server not found")
-                        var username = credentialStorage.getUsername(id)
-                        var password = credentialStorage.getPassword(id)
+                val id = serverId ?: throw StorageException("Server ID required for SMB")
+                getOrCreateRemoteHandler(id) { smbHandlerFactory.create(it) }
+            }
 
-                        // Migration/Fallback: if not in credentialStorage, use from DB and migrate
-                        if (username == null && password == null && (!server.isAnonymous)) {
-                            username = server.username
-                            password = server.password
-                            if (username != null || password != null) {
-                                credentialStorage.saveCredentials(id, username, password)
-                            }
-                        }
-
-                        val serverWithCredentials = server.copy(username = username, password = password)
-                        smbHandlerFactory.create(serverWithCredentials)
-                    }
-                } ?: throw StorageException("Server ID required for SMB")
+            StorageType.WEBDAV -> {
+                val id = serverId ?: throw StorageException("Server ID required for WEBDAV")
+                getOrCreateRemoteHandler(id) { webDavHandlerFactory.create(it) }
             }
 
             else -> throw UnsupportedOperationException("Storage type $storageType not supported yet")
         }
+    }
+
+    private suspend fun getOrCreateRemoteHandler(id: Long, createFactory: (RemoteServer) -> StorageSource): StorageSource = remoteHandlers.getOrPut(id) {
+        val server = remoteServerDao.getServerById(id) ?: throw StorageException("Server not found")
+        var username = credentialStorage.getUsername(id)
+        var password = credentialStorage.getPassword(id)
+
+        if (username == null && password == null && !server.isAnonymous) {
+            username = server.username
+            password = server.password
+            if (username != null || password != null) {
+                credentialStorage.saveCredentials(id, username, password)
+            }
+        }
+
+        val serverWithCredentials = server.copy(username = username, password = password)
+        createFactory(serverWithCredentials)
     }
 
     open suspend fun listFiles(path: String, storageType: StorageType, serverId: Long? = null): List<FileItem> {

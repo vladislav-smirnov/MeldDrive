@@ -41,4 +41,7 @@ object AppModule {
 
     @Provides
     fun provideSMBClient(): SMBClient = SMBClient()
+
+    @Provides
+    fun provideOkHttpClient(): okhttp3.OkHttpClient = okhttp3.OkHttpClient.Builder().build()
 }
