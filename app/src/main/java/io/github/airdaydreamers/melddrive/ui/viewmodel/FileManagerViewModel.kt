@@ -150,11 +150,12 @@ class FileManagerViewModel @Inject constructor(
 
     private fun navigateUp() {
         val currentPath = _state.value.currentPath
-        if (_state.value.currentStorageType == StorageType.LOCAL) {
+        val currentStorageType = _state.value.currentStorageType
+        if (currentStorageType == StorageType.LOCAL) {
             File(currentPath).parent?.let { onIntent(FileManagerIntent.NavigateTo(it, StorageType.LOCAL)) }
-        } else if (_state.value.currentStorageType == StorageType.SMB && currentPath.isNotEmpty()) {
+        } else if ((currentStorageType == StorageType.SMB || currentStorageType == StorageType.WEBDAV) && currentPath.isNotEmpty()) {
             val parent = if (currentPath.contains("/")) currentPath.substringBeforeLast("/") else ""
-            onIntent(FileManagerIntent.NavigateTo(parent, StorageType.SMB, _state.value.currentServerId))
+            onIntent(FileManagerIntent.NavigateTo(parent, currentStorageType, _state.value.currentServerId))
         }
     }
 
@@ -214,9 +215,11 @@ class FileManagerViewModel @Inject constructor(
                     .filter { showHidden || !it.isHidden }
                 _state.update { it.copy(files = files, isLoading = false) }
             } catch (e: StorageException) {
+                Timber.e(e, "FileManagerViewModel: loadFiles StorageException for path='%s' storageType=%s serverId=%s", path, storageType, serverId)
                 _state.update { it.copy(isLoading = false, errorMessage = e.message) }
                 _effect.send(FileManagerEffect.ShowToast(context.getString(R.string.toast_error, e.message)))
             } catch (e: IOException) {
+                Timber.e(e, "FileManagerViewModel: loadFiles IOException for path='%s' storageType=%s serverId=%s", path, storageType, serverId)
                 _state.update { it.copy(isLoading = false, errorMessage = e.message) }
                 _effect.send(FileManagerEffect.ShowToast(context.getString(R.string.toast_error, e.message)))
             }
@@ -281,7 +284,8 @@ fun getSidebarItems(remoteServers: List<io.github.airdaydreamers.melddrive.data.
         SidebarItem("music", "Music", File(root, Environment.DIRECTORY_MUSIC).absolutePath, SidebarItemType.SYSTEM_FOLDER, Icons.Default.MusicNote),
     )
     remoteServers.forEach { server ->
-        items.add(SidebarItem("remote_${server.id}", server.displayName, "", SidebarItemType.REMOTE_SERVER, Icons.Default.Storage, server.id))
+        val st = if (server.type.equals("WEBDAV", ignoreCase = true)) StorageType.WEBDAV else StorageType.SMB
+        items.add(SidebarItem("remote_${server.id}", server.displayName, "", SidebarItemType.REMOTE_SERVER, Icons.Default.Storage, server.id, st))
     }
     items.add(SidebarItem("add_storage", "Add Storage", null, SidebarItemType.ADD_STORAGE, Icons.Default.Add))
     return items

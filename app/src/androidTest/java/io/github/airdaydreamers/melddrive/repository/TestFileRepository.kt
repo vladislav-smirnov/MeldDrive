@@ -7,6 +7,7 @@ import io.github.airdaydreamers.melddrive.data.repository.FileRepository
 import io.github.airdaydreamers.melddrive.data.security.CredentialStorage
 import io.github.airdaydreamers.melddrive.data.storage.LocalFileSystemHandler
 import io.github.airdaydreamers.melddrive.data.storage.SmbFileSystemHandler
+import io.github.airdaydreamers.melddrive.data.storage.webdav.WebDavFileSystemHandler
 import io.github.airdaydreamers.melddrive.fake.FakeSmbServer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -22,7 +23,8 @@ class TestFileRepository @Inject constructor(
     credentialStorage: CredentialStorage,
     localHandler: LocalFileSystemHandler,
     smbHandlerFactory: SmbFileSystemHandler.Factory,
-) : FileRepository(remoteServerDao, credentialStorage, localHandler, smbHandlerFactory) {
+    webDavHandlerFactory: WebDavFileSystemHandler.Factory,
+) : FileRepository(remoteServerDao, credentialStorage, localHandler, smbHandlerFactory, webDavHandlerFactory) {
 
     override suspend fun listFiles(path: String, storageType: StorageType, serverId: Long?): List<FileItem> = withContext(Dispatchers.IO) {
         if (storageType == StorageType.SMB) {

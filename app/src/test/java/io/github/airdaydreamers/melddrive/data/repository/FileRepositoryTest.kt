@@ -7,6 +7,7 @@ import io.github.airdaydreamers.melddrive.data.model.StorageType
 import io.github.airdaydreamers.melddrive.data.security.CredentialStorage
 import io.github.airdaydreamers.melddrive.data.storage.LocalFileSystemHandler
 import io.github.airdaydreamers.melddrive.data.storage.SmbFileSystemHandler
+import io.github.airdaydreamers.melddrive.data.storage.webdav.WebDavFileSystemHandler
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -18,7 +19,7 @@ import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for [FileRepository] validating correct request routing
- * to appropriate file system handlers (LOCAL vs SMB) via dependency injection.
+ * to appropriate file system handlers (LOCAL, SMB, WEBDAV) via dependency injection.
  */
 class FileRepositoryTest {
 
@@ -27,6 +28,8 @@ class FileRepositoryTest {
     private lateinit var mockLocalHandler: LocalFileSystemHandler
     private lateinit var mockSmbHandler: SmbFileSystemHandler
     private lateinit var mockSmbHandlerFactory: SmbFileSystemHandler.Factory
+    private lateinit var mockWebDavHandler: WebDavFileSystemHandler
+    private lateinit var mockWebDavHandlerFactory: WebDavFileSystemHandler.Factory
     private lateinit var repository: FileRepository
 
     @BeforeEach
@@ -36,14 +39,18 @@ class FileRepositoryTest {
         mockLocalHandler = mockk(relaxed = true)
         mockSmbHandler = mockk(relaxed = true)
         mockSmbHandlerFactory = mockk(relaxed = true)
+        mockWebDavHandler = mockk(relaxed = true)
+        mockWebDavHandlerFactory = mockk(relaxed = true)
 
         every { mockSmbHandlerFactory.create(any()) } returns mockSmbHandler
+        every { mockWebDavHandlerFactory.create(any()) } returns mockWebDavHandler
 
         repository = FileRepository(
             remoteServerDao = remoteServerDao,
             credentialStorage = credentialStorage,
             localHandler = mockLocalHandler,
             smbHandlerFactory = mockSmbHandlerFactory,
+            webDavHandlerFactory = mockWebDavHandlerFactory,
         )
     }
 
@@ -93,6 +100,32 @@ class FileRepositoryTest {
         // Then
         coVerify { remoteServerDao.getServerById(serverId) }
         coVerify { mockSmbHandler.deleteFile(path) }
+    }
+
+    /**
+     * Use Case: Route Directory Listing to WebDAV Storage Handler
+     * Given a WebDAV server ID and path
+     * When listFiles is called with WEBDAV storage type
+     * Then it should delegate the listing to the WebDavFileSystemHandler
+     */
+    @Test
+    fun testListFilesWebDavRouting() = runBlocking {
+        // Given
+        val path = "documents"
+        val storageType = StorageType.WEBDAV
+        val serverId = 2L
+        val mockServer = RemoteServer(id = serverId, displayName = "WebDAV", host = "webdav.example.com", type = "WEBDAV")
+        val mockFiles = listOf(FileItem(path, "doc.pdf", false, storageType = StorageType.WEBDAV))
+
+        coEvery { remoteServerDao.getServerById(serverId) } returns mockServer
+        coEvery { mockWebDavHandler.listFiles(path) } returns mockFiles
+
+        // When
+        val result = repository.listFiles(path, storageType, serverId)
+
+        // Then
+        assertEquals(mockFiles, result)
+        coVerify { mockWebDavHandler.listFiles(path) }
     }
 
     /**

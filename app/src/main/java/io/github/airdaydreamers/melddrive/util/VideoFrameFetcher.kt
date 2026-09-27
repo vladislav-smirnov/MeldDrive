@@ -222,25 +222,24 @@ class VideoFrameFetcher(
     }
 
     class UriFactory(private val context: Context) : Fetcher.Factory<Uri> {
-        @Suppress("ReturnCount")
         override fun create(data: Uri, options: Options, imageLoader: ImageLoader): Fetcher? {
-            val scheme = data.scheme
-            val fileName = data.lastPathSegment?.substringAfterLast('/') ?: ""
-            if (fileName.startsWith("._")) {
-                return null
-            }
-
-            val mimeType = context.contentResolver.getType(data) ?: MimeTypeMapCompat.getMimeType(data.toString())
-            val isSupportedScheme = scheme == "content" || scheme == "file"
-            val isVideo = MimeTypeMapCompat.isVideoFile(data.toString()) || mimeType.startsWith("video/")
-
-            if (!isVideo || !isSupportedScheme) {
-                return null
-            }
+            if (!isValidUri(data)) return null
 
             return VideoFrameFetcher(options, imageLoader, cacheKey = data.toString()) {
                 setDataSource(context, data)
             }
+        }
+
+        private fun isValidUri(data: Uri): Boolean {
+            val fileName = data.lastPathSegment?.substringAfterLast('/') ?: ""
+            if (fileName.startsWith("._")) return false
+
+            val scheme = data.scheme
+            val isSupportedScheme = scheme == "content" || scheme == "file"
+            val mimeType = context.contentResolver.getType(data) ?: MimeTypeMapCompat.getMimeType(data.toString())
+            val isVideo = MimeTypeMapCompat.isVideoFile(data.toString()) || mimeType.startsWith("video/")
+
+            return isVideo && isSupportedScheme
         }
     }
 

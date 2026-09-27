@@ -15,6 +15,7 @@ import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
 import io.github.airdaydreamers.melddrive.data.db.RemoteServer
 import io.github.airdaydreamers.melddrive.data.db.RemoteServerDao
+import io.github.airdaydreamers.melddrive.data.security.CredentialStorage
 import io.github.airdaydreamers.melddrive.data.storage.SettingsManager
 import io.github.airdaydreamers.melddrive.di.AppModule
 import io.github.airdaydreamers.melddrive.fake.FakeSmbServer
@@ -22,6 +23,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.AfterClass
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Ignore
@@ -48,7 +51,11 @@ class MeldDriveUiTest {
     @Inject
     lateinit var settingsManager: SettingsManager
 
+    @Inject
+    lateinit var credentialStorage: CredentialStorage
+
     companion object {
+        private const val SAVE_NAVIGATION_TIMEOUT_MS = 30_000L
         private val fakeSmbServer = FakeSmbServer(4445)
 
         @JvmStatic
@@ -165,20 +172,32 @@ class MeldDriveUiTest {
         composeTestRule.onNodeWithTag("host_input").performTextInput("127.0.0.1")
 
         // Enter Port
-        composeTestRule.onNodeWithTag("port_input").performTextReplacement("4445")
+        composeTestRule.onNodeWithTag("port_input").performScrollTo().performTextReplacement("4445")
 
         // Enter Username & Password
-        composeTestRule.onNodeWithTag("username_input").performTextInput("admin")
-        composeTestRule.onNodeWithTag("password_input").performTextInput("secret")
+        composeTestRule.onNodeWithTag("username_input").performScrollTo().performTextInput("admin")
+        composeTestRule.onNodeWithTag("password_input").performScrollTo().performTextInput("secret")
 
         // Connect & Save
-        composeTestRule.onNodeWithTag("connect_save_button").performClick()
+        composeTestRule.onNodeWithTag("connect_save_button").performScrollTo().performClick()
 
-        // Wait for connection to succeed and navigate back
-        composeTestRule.waitForIdle()
-
+        // Wait for the asynchronous save operation to navigate back
+        composeTestRule.waitUntil(SAVE_NAVIGATION_TIMEOUT_MS) {
+            composeTestRule.onAllNodes(androidx.compose.ui.test.hasTestTag("search_button"))
+                .fetchSemanticsNodes().isNotEmpty() ||
+                composeTestRule.onAllNodes(androidx.compose.ui.test.hasTestTag("add_storage_error"))
+                    .fetchSemanticsNodes().isNotEmpty()
+        }
         // Verify it navigated back by checking search button in TopBar
         composeTestRule.onNodeWithTag("search_button").assertIsDisplayed()
+
+        val savedServer = runBlocking {
+            remoteServerDao.getAllServers().first().single { it.displayName == "Secure Server" }
+        }
+        assertEquals("admin", savedServer.username)
+        assertNull(savedServer.password)
+        assertEquals("admin", runBlocking { credentialStorage.getUsername(savedServer.id) })
+        assertEquals("secret", runBlocking { credentialStorage.getPassword(savedServer.id) })
     }
 
     /**
@@ -200,16 +219,19 @@ class MeldDriveUiTest {
         composeTestRule.onNodeWithTag("host_input").performTextInput("127.0.0.1")
 
         // Enter Port
-        composeTestRule.onNodeWithTag("port_input").performTextReplacement("4445")
+        composeTestRule.onNodeWithTag("port_input").performScrollTo().performTextReplacement("4445")
 
         // Check Anonymous checkbox
-        composeTestRule.onNodeWithTag("anonymous_checkbox").performClick()
+        composeTestRule.onNodeWithTag("anonymous_checkbox").performScrollTo().performClick()
 
         // Connect & Save
-        composeTestRule.onNodeWithTag("connect_save_button").performClick()
+        composeTestRule.onNodeWithTag("connect_save_button").performScrollTo().performClick()
 
-        // Wait for connection to succeed and navigate back
-        composeTestRule.waitForIdle()
+        // Wait for the asynchronous save operation to navigate back
+        composeTestRule.waitUntil(SAVE_NAVIGATION_TIMEOUT_MS) {
+            composeTestRule.onAllNodes(androidx.compose.ui.test.hasTestTag("search_button"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
 
         // Verify it navigated back
         composeTestRule.onNodeWithTag("search_button").assertIsDisplayed()

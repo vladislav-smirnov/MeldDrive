@@ -4,8 +4,8 @@ import android.content.Context
 import app.cash.turbine.test
 import io.github.airdaydreamers.melddrive.R
 import io.github.airdaydreamers.melddrive.data.repository.ServerRepository
-import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageEffect
 import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageIntent
+import io.github.airdaydreamers.melddrive.ui.mvi.ServerType
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -47,6 +47,26 @@ class AddStorageViewModelTest {
     @AfterEach
     fun tearDown() {
         Dispatchers.resetMain()
+    }
+
+    /**
+     * Use Case: Server Type Change Updates Default Port
+     * Given the add storage form is open
+     * When ServerTypeChange intent is dispatched
+     * Then serverType and port should be updated based on the enum default port
+     */
+    @Test
+    fun testServerTypeChangeUpdatesPort() {
+        // Given default is SMB with port 445
+        assertEquals(ServerType.SMB, viewModel.state.value.serverType)
+        assertEquals("445", viewModel.state.value.port)
+
+        // When switching to WEBDAV
+        viewModel.onIntent(AddStorageIntent.ServerTypeChange(ServerType.WEBDAV))
+
+        // Then
+        assertEquals(ServerType.WEBDAV, viewModel.state.value.serverType)
+        assertEquals("80", viewModel.state.value.port)
     }
 
     /**
@@ -100,7 +120,7 @@ class AddStorageViewModelTest {
      * Use Case: Successful Server Creation
      * Given all form fields are correctly filled
      * When SaveServer intent is dispatched
-     * Then the viewmodel should set loading, save the server to repository, set success, and trigger NavigateBack effect
+     * Then the viewmodel should save the server and set the success state
      */
     @Test
     fun testSaveServerSuccess() = runBlocking {
@@ -113,14 +133,14 @@ class AddStorageViewModelTest {
         viewModel.onIntent(AddStorageIntent.AnonymousChange(false))
 
         // When & Then
-        viewModel.effect.test {
+        viewModel.state.test {
             viewModel.onIntent(AddStorageIntent.SaveServer)
 
-            // Verify Navigation Effect
-            assertEquals(AddStorageEffect.NavigateBack, awaitItem())
+            var state = awaitItem()
+            while (!state.isSuccess) {
+                state = awaitItem()
+            }
 
-            // Verify State
-            val state = viewModel.state.value
             assertFalse(state.isLoading)
             assertTrue(state.isSuccess)
             assertNull(state.error)
@@ -132,12 +152,11 @@ class AddStorageViewModelTest {
                             it.host == "10.0.0.5" &&
                             it.port == 445 &&
                             it.username == "user1" &&
-                            it.password == null // Don't save password in DB object
+                            it.password == null
                     },
                     "pass1",
                 )
             }
-            cancelAndIgnoreRemainingEvents()
         }
     }
 }

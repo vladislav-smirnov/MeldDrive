@@ -238,7 +238,7 @@ private fun handleSidebarItemClick(item: SidebarItem, onIntent: (FileManagerInte
     if (item.type == SidebarItemType.ADD_STORAGE) {
         onIntent(FileManagerIntent.NavigateToAddStorage)
     } else {
-        val storageType = when (item.type) {
+        val storageType = item.storageType ?: when (item.type) {
             SidebarItemType.REMOTE_SERVER -> StorageType.SMB
             else -> StorageType.LOCAL
         }

@@ -13,4 +13,5 @@ data class RemoteServer(
     val password: String? = null,
     val isAnonymous: Boolean = false,
     val type: String = "SMB",
+    val trustSelfSigned: Boolean = false,
 )

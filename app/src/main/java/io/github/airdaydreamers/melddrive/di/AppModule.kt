@@ -41,4 +41,14 @@ object AppModule {
 
     @Provides
     fun provideSMBClient(): SMBClient = SMBClient()
+
+    @Provides
+    fun provideOkHttpClient(): okhttp3.OkHttpClient = okhttp3.OkHttpClient.Builder().build()
+
+    @Provides
+    @Singleton
+    fun provideWebDavFileSystemHandlerFactory(): io.github.airdaydreamers.melddrive.data.storage.webdav.WebDavFileSystemHandler.Factory =
+        io.github.airdaydreamers.melddrive.data.storage.webdav.WebDavFileSystemHandler.Factory { server ->
+            io.github.airdaydreamers.melddrive.data.storage.webdav.WebDavFileSystemHandler(server)
+        }
 }

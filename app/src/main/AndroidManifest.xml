@@ -24,6 +24,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MeldDrive.AppCompat"
         android:localeConfig="@xml/locales_config"
+        android:usesCleartextTraffic="true"
         tools:targetApi="33">
 
         <service

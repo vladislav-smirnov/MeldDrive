@@ -3,6 +3,8 @@
     <!-- Untranslatable -->
     <string name="app_name" translatable="false">MeldDrive</string>
     <string name="untranslatable_smb" translatable="false">SMB</string>
+    <string name="untranslatable_webdav" translatable="false">WebDAV</string>
+    <string name="trust_self_signed" tools:ignore="MissingTranslation">Trust Self-signed / Untrusted Certificates</string>
     <string name="untranslatable_nas" translatable="false">NAS</string>
     <string name="untranslatable_ip" translatable="false">IP</string>
     <string name="untranslatable_mb" translatable="false">MB</string>

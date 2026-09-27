@@ -16,7 +16,9 @@ import io.github.airdaydreamers.melddrive.data.security.SecurityManager
 import io.github.airdaydreamers.melddrive.data.storage.LocalFileSystemHandler
 import io.github.airdaydreamers.melddrive.data.storage.SettingsManager
 import io.github.airdaydreamers.melddrive.data.storage.SmbFileSystemHandler
+import io.github.airdaydreamers.melddrive.data.storage.webdav.WebDavFileSystemHandler
 import io.github.airdaydreamers.melddrive.repository.TestFileRepository
+import okhttp3.OkHttpClient
 import javax.inject.Singleton
 
 @Module
@@ -50,11 +52,19 @@ object TestAppModule {
     fun provideSMBClient(): SMBClient = SMBClient()
 
     @Provides
+    fun provideOkHttpClient(): OkHttpClient = OkHttpClient.Builder().build()
+
+    @Provides
+    @Singleton
+    fun provideWebDavFileSystemHandlerFactory(): WebDavFileSystemHandler.Factory = WebDavFileSystemHandler.Factory { server -> WebDavFileSystemHandler(server) }
+
+    @Provides
     @Singleton
     fun provideFileRepository(
         remoteServerDao: RemoteServerDao,
         credentialStorage: CredentialStorage,
         localHandler: LocalFileSystemHandler,
         smbHandlerFactory: SmbFileSystemHandler.Factory,
-    ): FileRepository = TestFileRepository(remoteServerDao, credentialStorage, localHandler, smbHandlerFactory)
+        webDavHandlerFactory: WebDavFileSystemHandler.Factory,
+    ): FileRepository = TestFileRepository(remoteServerDao, credentialStorage, localHandler, smbHandlerFactory, webDavHandlerFactory)
 }

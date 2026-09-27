@@ -18,6 +18,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -36,22 +37,17 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.airdaydreamers.melddrive.R
-import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageEffect
 import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageIntent
 import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageState
+import io.github.airdaydreamers.melddrive.ui.mvi.ServerType
 import io.github.airdaydreamers.melddrive.ui.viewmodel.AddStorageViewModel
-import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun AddStorageScreen(onBack: () -> Unit, onSuccess: () -> Unit, viewModel: AddStorageViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) {
-        viewModel.effect.collectLatest { effect ->
-            when (effect) {
-                AddStorageEffect.NavigateBack -> onSuccess()
-            }
-        }
+    LaunchedEffect(state.isSuccess) {
+        if (state.isSuccess) onSuccess()
     }
 
     AddStorageContent(
@@ -67,7 +63,13 @@ fun AddStorageContent(state: AddStorageState, onIntent: (AddStorageIntent) -> Un
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.add_storage_title, stringResource(R.string.untranslatable_smb))) },
+                title = {
+                    val typeName = when (state.serverType) {
+                        ServerType.WEBDAV -> stringResource(R.string.untranslatable_webdav)
+                        ServerType.SMB -> stringResource(R.string.untranslatable_smb)
+                    }
+                    Text(stringResource(R.string.add_storage_title, typeName))
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack, modifier = Modifier.testTag("back_button")) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.content_desc_back))
@@ -96,7 +98,7 @@ private fun AddStorageForm(state: AddStorageState, onIntent: (AddStorageIntent) 
         AddStorageFields(state, onIntent)
 
         if (state.error != null) {
-            Text(state.error, color = MaterialTheme.colorScheme.error)
+            Text(state.error, color = MaterialTheme.colorScheme.error, modifier = Modifier.testTag("add_storage_error"))
         }
 
         AddStorageButtons(state, onIntent)
@@ -105,6 +107,8 @@ private fun AddStorageForm(state: AddStorageState, onIntent: (AddStorageIntent) 
 
 @Composable
 private fun AddStorageFields(state: AddStorageState, onIntent: (AddStorageIntent) -> Unit) {
+    ServerTypeSelector(state.serverType, onIntent)
+
     OutlinedTextField(
         value = state.displayName,
         onValueChange = { onIntent(AddStorageIntent.DisplayNameChange(it)) },
@@ -125,6 +129,43 @@ private fun AddStorageFields(state: AddStorageState, onIntent: (AddStorageIntent
         label = { Text(stringResource(R.string.label_port)) },
         modifier = Modifier.fillMaxWidth().testTag("port_input"),
     )
+
+    AuthFields(state, onIntent)
+}
+
+@Composable
+private fun ServerTypeSelector(serverType: ServerType, onIntent: (AddStorageIntent) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        FilterChip(
+            selected = serverType == ServerType.SMB,
+            onClick = { onIntent(AddStorageIntent.ServerTypeChange(ServerType.SMB)) },
+            label = { Text(stringResource(R.string.untranslatable_smb)) },
+            modifier = Modifier.testTag("server_type_smb"),
+        )
+        FilterChip(
+            selected = serverType == ServerType.WEBDAV,
+            onClick = { onIntent(AddStorageIntent.ServerTypeChange(ServerType.WEBDAV)) },
+            label = { Text(stringResource(R.string.untranslatable_webdav)) },
+            modifier = Modifier.testTag("server_type_webdav"),
+        )
+    }
+}
+
+@Composable
+private fun AuthFields(state: AddStorageState, onIntent: (AddStorageIntent) -> Unit) {
+    if (state.serverType == ServerType.WEBDAV) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(
+                checked = state.trustSelfSigned,
+                onCheckedChange = { onIntent(AddStorageIntent.TrustSelfSignedChange(it)) },
+                modifier = Modifier.testTag("trust_self_signed_checkbox"),
+            )
+            Text(stringResource(R.string.trust_self_signed))
+        }
+    }
 
     Row(verticalAlignment = Alignment.CenterVertically) {
         Checkbox(

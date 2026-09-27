@@ -35,7 +35,7 @@ internal class FileStreamCallback(
     private var bufferOffset: Long = -1L
     private val bufferSize = DEFAULT_BUFFER_SIZE
 
-    private val isBufferActive = bufferingEnabled && storageType == StorageType.SMB
+    private val isBufferActive = bufferingEnabled && (storageType == StorageType.SMB || storageType == StorageType.WEBDAV)
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val prefetchSemaphore = Semaphore(MAX_CONCURRENT_PREFETCH)
     private val activeDownloads = ConcurrentHashMap<Long, Deferred<ByteArray>>()
