@@ -39,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -47,6 +48,10 @@ import io.github.airdaydreamers.melddrive.data.discovery.DiscoveredServer
 import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageIntent
 import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageState
 import io.github.airdaydreamers.melddrive.ui.mvi.ServerType
+import io.github.airdaydreamers.melddrive.ui.preview.AddStoragePreviewParameterProvider
+import io.github.airdaydreamers.melddrive.ui.preview.AddStoragePreviewWrapper
+import io.github.airdaydreamers.melddrive.ui.preview.DevicePreviews
+import io.github.airdaydreamers.melddrive.ui.preview.ThemePreviews
 import io.github.airdaydreamers.melddrive.ui.viewmodel.AddStorageViewModel
 
 @Composable
@@ -309,4 +314,11 @@ private fun ColumnScope.AddStorageButtons(state: AddStorageState, onIntent: (Add
         }
         Text(stringResource(R.string.btn_connect_save))
     }
+}
+
+@DevicePreviews
+@ThemePreviews
+@Composable
+fun AddStorageScreenPreview(@PreviewParameter(AddStoragePreviewParameterProvider::class) state: AddStorageState) {
+    AddStoragePreviewWrapper(initialState = state)
 }

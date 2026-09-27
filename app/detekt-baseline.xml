@@ -2,10 +2,18 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
+    <ID>CognitiveComplexMethod:PreviewWrappers.kt$@Composable fun AddStoragePreviewWrapper( initialState: AddStorageState = AddStoragePreviewParameterProvider().values.first(), onBack: () -&gt; Unit = {}, onSuccess: () -&gt; Unit = {}, )</ID>
+    <ID>CognitiveComplexMethod:PreviewWrappers.kt$@Composable fun FileManagerPreviewWrapper( initialState: FileManagerState = FileManagerPreviewParameterProvider().values.first(), navigationType: NavigationType? = null, onNavigateToAddStorage: () -&gt; Unit = {}, onNavigateToSettings: () -&gt; Unit = {}, )</ID>
+    <ID>CyclomaticComplexMethod:PreviewWrappers.kt$@Composable fun AddStoragePreviewWrapper( initialState: AddStorageState = AddStoragePreviewParameterProvider().values.first(), onBack: () -&gt; Unit = {}, onSuccess: () -&gt; Unit = {}, )</ID>
+    <ID>CyclomaticComplexMethod:PreviewWrappers.kt$@Composable fun FileManagerPreviewWrapper( initialState: FileManagerState = FileManagerPreviewParameterProvider().values.first(), navigationType: NavigationType? = null, onNavigateToAddStorage: () -&gt; Unit = {}, onNavigateToSettings: () -&gt; Unit = {}, )</ID>
+    <ID>LongMethod:PreviewWrappers.kt$@Composable fun AddStoragePreviewWrapper( initialState: AddStorageState = AddStoragePreviewParameterProvider().values.first(), onBack: () -&gt; Unit = {}, onSuccess: () -&gt; Unit = {}, )</ID>
+    <ID>LongMethod:PreviewWrappers.kt$@Composable fun FileManagerPreviewWrapper( initialState: FileManagerState = FileManagerPreviewParameterProvider().values.first(), navigationType: NavigationType? = null, onNavigateToAddStorage: () -&gt; Unit = {}, onNavigateToSettings: () -&gt; Unit = {}, )</ID>
+    <ID>MagicNumber:PreviewParameters.kt$PreviewMockData$445</ID>
+    <ID>MagicNumber:PreviewParameters.kt$PreviewMockData$8080</ID>
+    <ID>MatchingDeclarationName:MeldDriveFlowPreviewWrapper.kt$PreviewScreen</ID>
     <ID>ReturnCount:NetBiosDiscoveryManager.kt$NetBiosDiscoveryManager$private fun parseNetBiosName(data: ByteArray, length: Int): String?</ID>
     <ID>TooGenericExceptionCaught:MulticastLockManager.kt$MulticastLockManager$e: Exception</ID>
     <ID>TooGenericExceptionCaught:NetBiosDiscoveryManager.kt$NetBiosDiscoveryManager$e: Exception</ID>
     <ID>TooGenericExceptionCaught:NsdDiscoveryManager.kt$NsdDiscoveryManager$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:NsdDiscoveryManager.kt$NsdDiscoveryManager.&lt;no name provided&gt;$e: Exception</ID>
   </CurrentIssues>
 </SmellBaseline>
