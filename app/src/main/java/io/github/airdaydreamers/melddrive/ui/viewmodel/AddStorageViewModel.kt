@@ -7,12 +7,18 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.airdaydreamers.melddrive.R
 import io.github.airdaydreamers.melddrive.data.db.RemoteServer
+import io.github.airdaydreamers.melddrive.data.discovery.DiscoveredServer
 import io.github.airdaydreamers.melddrive.data.model.StorageException
+import io.github.airdaydreamers.melddrive.data.model.StorageType
+import io.github.airdaydreamers.melddrive.data.repository.ServerDiscoveryRepository
 import io.github.airdaydreamers.melddrive.data.repository.ServerRepository
 import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageIntent
 import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageState
+import io.github.airdaydreamers.melddrive.ui.mvi.ServerType
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -20,9 +26,19 @@ import java.io.IOException
 import javax.inject.Inject
 
 @HiltViewModel
-class AddStorageViewModel @Inject constructor(private val serverRepository: ServerRepository, @ApplicationContext private val context: Context) : ViewModel() {
+class AddStorageViewModel @Inject constructor(
+    private val serverRepository: ServerRepository,
+    private val serverDiscoveryRepository: ServerDiscoveryRepository,
+    @ApplicationContext private val context: Context,
+) : ViewModel() {
     private val _state = MutableStateFlow(AddStorageState())
     val state = _state.asStateFlow()
+
+    private var discoveryJob: Job? = null
+
+    init {
+        startDiscovery()
+    }
 
     fun onIntent(intent: AddStorageIntent) {
         Timber.d("AddStorageViewModel: Handling intent %s", intent::class.simpleName)
@@ -45,7 +61,38 @@ class AddStorageViewModel @Inject constructor(private val serverRepository: Serv
 
             is AddStorageIntent.TrustSelfSignedChange -> _state.update { it.copy(trustSelfSigned = intent.value) }
 
+            AddStorageIntent.StartDiscovery -> startDiscovery()
+
+            is AddStorageIntent.SelectDiscoveredServer -> selectDiscoveredServer(intent.server)
+
             AddStorageIntent.SaveServer -> saveServer()
+        }
+    }
+
+    private fun startDiscovery() {
+        discoveryJob?.cancel()
+        _state.update { it.copy(isDiscovering = true, discoveredServers = emptyList()) }
+
+        discoveryJob = viewModelScope.launch {
+            serverDiscoveryRepository.discoverServers()
+                .onCompletion {
+                    _state.update { state -> state.copy(isDiscovering = false) }
+                }
+                .collect { list ->
+                    _state.update { state -> state.copy(discoveredServers = list) }
+                }
+        }
+    }
+
+    private fun selectDiscoveredServer(server: DiscoveredServer) {
+        val serverType = if (server.type == StorageType.WEBDAV) ServerType.WEBDAV else ServerType.SMB
+        _state.update { state ->
+            state.copy(
+                serverType = serverType,
+                displayName = server.name,
+                host = server.host,
+                port = server.port.toString(),
+            )
         }
     }
 

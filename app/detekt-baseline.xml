@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ReturnCount:NetBiosDiscoveryManager.kt$NetBiosDiscoveryManager$private fun parseNetBiosName(data: ByteArray, length: Int): String?</ID>
+    <ID>TooGenericExceptionCaught:MulticastLockManager.kt$MulticastLockManager$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:NetBiosDiscoveryManager.kt$NetBiosDiscoveryManager$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:NsdDiscoveryManager.kt$NsdDiscoveryManager$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:NsdDiscoveryManager.kt$NsdDiscoveryManager.&lt;no name provided&gt;$e: Exception</ID>
+  </CurrentIssues>
+</SmellBaseline>

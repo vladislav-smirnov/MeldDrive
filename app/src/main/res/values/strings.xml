@@ -27,6 +27,10 @@
     <string name="remote">Remote</string>
 
     <string name="add_storage_title">Add <xliff:g id="smb">%1$s</xliff:g> Storage</string>
+    <string name="discovered_servers_title" tools:ignore="MissingTranslation">Available Local Network Servers</string>
+    <string name="btn_scan_network" tools:ignore="MissingTranslation">Scan Network</string>
+    <string name="scanning_network" tools:ignore="MissingTranslation">Scanning network…</string>
+    <string name="no_servers_found" tools:ignore="MissingTranslation">No servers discovered on the local network.</string>
     <string name="label_display_name">Display Name (e.g. Home <xliff:g id="nas">%1$s</xliff:g>)</string>
     <string name="label_host">Host Address (<xliff:g id="ip">%1$s</xliff:g> or hostname)</string>
     <string name="label_port">Port (default 445)</string>
