@@ -172,14 +172,14 @@ class MeldDriveUiTest {
         composeTestRule.onNodeWithTag("host_input").performTextInput("127.0.0.1")
 
         // Enter Port
-        composeTestRule.onNodeWithTag("port_input").performTextReplacement("4445")
+        composeTestRule.onNodeWithTag("port_input").performScrollTo().performTextReplacement("4445")
 
         // Enter Username & Password
-        composeTestRule.onNodeWithTag("username_input").performTextInput("admin")
-        composeTestRule.onNodeWithTag("password_input").performTextInput("secret")
+        composeTestRule.onNodeWithTag("username_input").performScrollTo().performTextInput("admin")
+        composeTestRule.onNodeWithTag("password_input").performScrollTo().performTextInput("secret")
 
         // Connect & Save
-        composeTestRule.onNodeWithTag("connect_save_button").performClick()
+        composeTestRule.onNodeWithTag("connect_save_button").performScrollTo().performClick()
 
         // Wait for the asynchronous save operation to navigate back
         composeTestRule.waitUntil(SAVE_NAVIGATION_TIMEOUT_MS) {
@@ -219,13 +219,13 @@ class MeldDriveUiTest {
         composeTestRule.onNodeWithTag("host_input").performTextInput("127.0.0.1")
 
         // Enter Port
-        composeTestRule.onNodeWithTag("port_input").performTextReplacement("4445")
+        composeTestRule.onNodeWithTag("port_input").performScrollTo().performTextReplacement("4445")
 
         // Check Anonymous checkbox
-        composeTestRule.onNodeWithTag("anonymous_checkbox").performClick()
+        composeTestRule.onNodeWithTag("anonymous_checkbox").performScrollTo().performClick()
 
         // Connect & Save
-        composeTestRule.onNodeWithTag("connect_save_button").performClick()
+        composeTestRule.onNodeWithTag("connect_save_button").performScrollTo().performClick()
 
         // Wait for the asynchronous save operation to navigate back
         composeTestRule.waitUntil(SAVE_NAVIGATION_TIMEOUT_MS) {
