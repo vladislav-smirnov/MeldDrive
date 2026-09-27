@@ -33,7 +33,3 @@ sealed interface AddStorageIntent {
     data class TrustSelfSignedChange(val value: Boolean) : AddStorageIntent
     data object SaveServer : AddStorageIntent
 }
-
-sealed interface AddStorageEffect {
-    data object NavigateBack : AddStorageEffect
-}

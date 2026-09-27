@@ -9,13 +9,10 @@ import io.github.airdaydreamers.melddrive.R
 import io.github.airdaydreamers.melddrive.data.db.RemoteServer
 import io.github.airdaydreamers.melddrive.data.model.StorageException
 import io.github.airdaydreamers.melddrive.data.repository.ServerRepository
-import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageEffect
 import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageIntent
 import io.github.airdaydreamers.melddrive.ui.mvi.AddStorageState
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -26,9 +23,6 @@ import javax.inject.Inject
 class AddStorageViewModel @Inject constructor(private val serverRepository: ServerRepository, @ApplicationContext private val context: Context) : ViewModel() {
     private val _state = MutableStateFlow(AddStorageState())
     val state = _state.asStateFlow()
-
-    private val _effect = Channel<AddStorageEffect>()
-    val effect = _effect.receiveAsFlow()
 
     fun onIntent(intent: AddStorageIntent) {
         Timber.d("AddStorageViewModel: Handling intent %s", intent::class.simpleName)
@@ -76,7 +70,6 @@ class AddStorageViewModel @Inject constructor(private val serverRepository: Serv
                 )
                 serverRepository.addRemoteServer(server, if (s.isAnonymous) null else s.password)
                 _state.update { it.copy(isLoading = false, isSuccess = true) }
-                _effect.send(AddStorageEffect.NavigateBack)
             } catch (e: StorageException) {
                 Timber.e(e, "AddStorageViewModel: saveServer StorageException")
                 _state.update { it.copy(isLoading = false, error = e.message) }

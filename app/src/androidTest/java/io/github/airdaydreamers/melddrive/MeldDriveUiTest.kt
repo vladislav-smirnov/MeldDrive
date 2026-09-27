@@ -15,6 +15,7 @@ import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
 import io.github.airdaydreamers.melddrive.data.db.RemoteServer
 import io.github.airdaydreamers.melddrive.data.db.RemoteServerDao
+import io.github.airdaydreamers.melddrive.data.security.CredentialStorage
 import io.github.airdaydreamers.melddrive.data.storage.SettingsManager
 import io.github.airdaydreamers.melddrive.di.AppModule
 import io.github.airdaydreamers.melddrive.fake.FakeSmbServer
@@ -22,6 +23,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.AfterClass
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Ignore
@@ -47,6 +50,9 @@ class MeldDriveUiTest {
 
     @Inject
     lateinit var settingsManager: SettingsManager
+
+    @Inject
+    lateinit var credentialStorage: CredentialStorage
 
     companion object {
         private const val SAVE_NAVIGATION_TIMEOUT_MS = 30_000L
@@ -178,11 +184,20 @@ class MeldDriveUiTest {
         // Wait for the asynchronous save operation to navigate back
         composeTestRule.waitUntil(SAVE_NAVIGATION_TIMEOUT_MS) {
             composeTestRule.onAllNodes(androidx.compose.ui.test.hasTestTag("search_button"))
-                .fetchSemanticsNodes().isNotEmpty()
+                .fetchSemanticsNodes().isNotEmpty() ||
+                composeTestRule.onAllNodes(androidx.compose.ui.test.hasTestTag("add_storage_error"))
+                    .fetchSemanticsNodes().isNotEmpty()
         }
-
         // Verify it navigated back by checking search button in TopBar
         composeTestRule.onNodeWithTag("search_button").assertIsDisplayed()
+
+        val savedServer = runBlocking {
+            remoteServerDao.getAllServers().first().single { it.displayName == "Secure Server" }
+        }
+        assertEquals("admin", savedServer.username)
+        assertNull(savedServer.password)
+        assertEquals("admin", runBlocking { credentialStorage.getUsername(savedServer.id) })
+        assertEquals("secret", runBlocking { credentialStorage.getPassword(savedServer.id) })
     }
 
     /**
