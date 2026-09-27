@@ -5,9 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
@@ -26,11 +23,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.airdaydreamers.melddrive.R
-import io.github.airdaydreamers.melddrive.data.model.FileItem
 import io.github.airdaydreamers.melddrive.data.model.SidebarItem
 import io.github.airdaydreamers.melddrive.data.model.SidebarItemType
 import io.github.airdaydreamers.melddrive.data.model.StorageType
@@ -46,7 +42,10 @@ import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerEffect
 import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerIntent
 import io.github.airdaydreamers.melddrive.ui.mvi.FileManagerState
 import io.github.airdaydreamers.melddrive.ui.mvi.ViewMode
-import io.github.airdaydreamers.melddrive.ui.theme.MeldDriveTheme
+import io.github.airdaydreamers.melddrive.ui.preview.DevicePreviews
+import io.github.airdaydreamers.melddrive.ui.preview.FileManagerPreviewParameterProvider
+import io.github.airdaydreamers.melddrive.ui.preview.FileManagerPreviewWrapper
+import io.github.airdaydreamers.melddrive.ui.preview.ThemePreviews
 import io.github.airdaydreamers.melddrive.ui.viewmodel.FileManagerViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -324,32 +323,9 @@ private fun FileListView(state: FileManagerState, onIntent: (FileManagerIntent) 
     }
 }
 
-@Preview(showBackground = true)
+@DevicePreviews
+@ThemePreviews
 @Composable
-fun FileManagerScreenPreview() {
-    val mockFiles = listOf(
-        FileItem(path = "/Documents", name = "Documents", isDirectory = true),
-        FileItem(path = "/Downloads", name = "Downloads", isDirectory = true),
-        FileItem(path = "/photo.jpg", name = "photo.jpg", isDirectory = false, size = 1024 * 1024),
-        FileItem(path = "/report.pdf", name = "report.pdf", isDirectory = false, size = 512 * 1024),
-    )
-
-    val mockSidebarItems = listOf(
-        SidebarItem("home", "Home", "/", SidebarItemType.SYSTEM_FOLDER, Icons.Default.Home),
-        SidebarItem("remote_1", "SMB Server", "", SidebarItemType.REMOTE_SERVER, Icons.Default.Storage, 1),
-    )
-
-    val state = FileManagerState(
-        currentPath = "/storage/emulated/0",
-        files = mockFiles,
-        sidebarItems = mockSidebarItems,
-    )
-
-    MeldDriveTheme(dynamicColor = false) {
-        FileManagerContent(
-            state = state,
-            navigationType = NavigationType.DRAWER,
-            onIntent = {},
-        )
-    }
+fun FileManagerScreenPreview(@PreviewParameter(FileManagerPreviewParameterProvider::class) state: FileManagerState) {
+    FileManagerPreviewWrapper(initialState = state)
 }

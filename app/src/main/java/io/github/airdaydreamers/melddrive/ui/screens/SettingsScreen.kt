@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -43,6 +44,10 @@ import io.github.airdaydreamers.melddrive.data.model.AppLanguage
 import io.github.airdaydreamers.melddrive.ui.components.SelectLanguageBottomSheetComponent
 import io.github.airdaydreamers.melddrive.ui.mvi.SettingsIntent
 import io.github.airdaydreamers.melddrive.ui.mvi.SettingsState
+import io.github.airdaydreamers.melddrive.ui.preview.DevicePreviews
+import io.github.airdaydreamers.melddrive.ui.preview.SettingsPreviewParameterProvider
+import io.github.airdaydreamers.melddrive.ui.preview.SettingsPreviewWrapper
+import io.github.airdaydreamers.melddrive.ui.preview.ThemePreviews
 import io.github.airdaydreamers.melddrive.ui.viewmodel.SettingsViewModel
 
 private const val MIN_BUFFER_MB = 8f
@@ -277,4 +282,11 @@ fun BufferSizeSection(bufferingEnabled: Boolean, bufferSizeMb: Int, onValueChang
             }
         }
     }
+}
+
+@DevicePreviews
+@ThemePreviews
+@Composable
+fun SettingsScreenPreview(@PreviewParameter(SettingsPreviewParameterProvider::class) state: SettingsState) {
+    SettingsPreviewWrapper(initialState = state)
 }
