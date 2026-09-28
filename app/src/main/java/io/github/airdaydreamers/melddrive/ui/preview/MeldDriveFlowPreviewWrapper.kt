@@ -22,11 +22,16 @@ enum class PreviewScreen {
 @Composable
 fun MeldDriveFlowPreviewWrapper(initialScreen: PreviewScreen = PreviewScreen.FILE_MANAGER, navigationType: NavigationType? = null) {
     var currentScreen by remember { mutableStateOf(initialScreen) }
+    var fileManagerState by remember { mutableStateOf(FileManagerPreviewParameterProvider().values.first()) }
+    var settingsState by remember { mutableStateOf(SettingsPreviewParameterProvider().values.first()) }
+    var addStorageState by remember { mutableStateOf(AddStoragePreviewParameterProvider().values.first()) }
 
     MeldDriveTheme {
         when (currentScreen) {
             PreviewScreen.FILE_MANAGER -> {
                 FileManagerPreviewWrapper(
+                    state = fileManagerState,
+                    onStateChange = { fileManagerState = it },
                     navigationType = navigationType,
                     onNavigateToSettings = { currentScreen = PreviewScreen.SETTINGS },
                     onNavigateToAddStorage = { currentScreen = PreviewScreen.ADD_STORAGE },
@@ -35,12 +40,16 @@ fun MeldDriveFlowPreviewWrapper(initialScreen: PreviewScreen = PreviewScreen.FIL
 
             PreviewScreen.SETTINGS -> {
                 SettingsPreviewWrapper(
+                    state = settingsState,
+                    onStateChange = { settingsState = it },
                     onBack = { currentScreen = PreviewScreen.FILE_MANAGER },
                 )
             }
 
             PreviewScreen.ADD_STORAGE -> {
                 AddStoragePreviewWrapper(
+                    state = addStorageState,
+                    onStateChange = { addStorageState = it },
                     onBack = { currentScreen = PreviewScreen.FILE_MANAGER },
                     onSuccess = { currentScreen = PreviewScreen.FILE_MANAGER },
                 )

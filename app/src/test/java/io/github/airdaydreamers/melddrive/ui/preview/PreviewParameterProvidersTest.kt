@@ -1,5 +1,6 @@
 package io.github.airdaydreamers.melddrive.ui.preview
 
+import io.github.airdaydreamers.melddrive.ui.mvi.ServerType
 import io.github.airdaydreamers.melddrive.ui.mvi.ViewMode
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -94,11 +95,11 @@ class PreviewParameterProvidersTest {
         assertEquals(5, states.size)
 
         // 1. Default SMB State
-        assertEquals("SMB", states[0].serverType)
+        assertEquals(ServerType.SMB, states[0].serverType)
         assertEquals("My Home NAS", states[0].displayName)
 
         // 2. WebDAV State
-        assertEquals("WEBDAV", states[1].serverType)
+        assertEquals(ServerType.WEBDAV, states[1].serverType)
         assertTrue(states[1].trustSelfSigned)
 
         // 3. Loading State

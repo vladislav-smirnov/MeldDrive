@@ -37,8 +37,18 @@ fun FileManagerPreviewWrapper(
     navigationType: NavigationType? = null,
     onNavigateToAddStorage: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
+    state: FileManagerState? = null,
+    onStateChange: ((FileManagerState) -> Unit)? = null,
 ) {
-    var state by remember { mutableStateOf(initialState) }
+    var localState by remember { mutableStateOf(initialState) }
+    val currentState = state ?: localState
+    val updateState: (FileManagerState) -> Unit = { newState ->
+        if ((state != null) && (onStateChange != null)) {
+            onStateChange(newState)
+        } else {
+            localState = newState
+        }
+    }
 
     BoxWithConstraints {
         val effectiveNavigationType = navigationType ?: when {
@@ -49,71 +59,100 @@ fun FileManagerPreviewWrapper(
 
         MeldDriveTheme {
             FileManagerContent(
-                state = state,
+                state = currentState,
                 navigationType = effectiveNavigationType,
                 onIntent = { intent ->
                     when (intent) {
                         is FileManagerIntent.ToggleViewMode -> {
-                            state = state.copy(viewMode = intent.viewMode)
+                            updateState(currentState.copy(viewMode = intent.viewMode))
                         }
 
                         is FileManagerIntent.Search -> {
-                            state = state.copy(searchQuery = intent.query)
+                            updateState(currentState.copy(searchQuery = intent.query))
                         }
 
                         is FileManagerIntent.SetSearchActive -> {
-                            state = state.copy(
-                                isSearchActive = intent.isActive,
-                                searchQuery = if (!intent.isActive) "" else state.searchQuery,
+                            updateState(
+                                currentState.copy(
+                                    isSearchActive = intent.isActive,
+                                    searchQuery = if (!intent.isActive) "" else currentState.searchQuery,
+                                ),
                             )
                         }
 
                         is FileManagerIntent.SelectFile -> {
-                            val newSelection = state.selectedFiles.toMutableSet()
+                            val newSelection = currentState.selectedFiles.toMutableSet()
                             if (newSelection.contains(intent.path)) {
                                 newSelection.remove(intent.path)
                             } else {
                                 newSelection.add(intent.path)
                             }
-                            state = state.copy(selectedFiles = newSelection)
+                            updateState(currentState.copy(selectedFiles = newSelection))
                         }
 
                         is FileManagerIntent.NavigateTo -> {
-                            state = state.copy(
-                                currentPath = intent.path,
-                                currentStorageType = intent.storageType,
-                                currentServerId = intent.serverId,
-                                selectedFiles = emptySet(),
+                            val newFiles = if (intent.path == "/storage/emulated/0") {
+                                PreviewMockData.sampleFiles
+                            } else {
+                                emptyList()
+                            }
+                            updateState(
+                                currentState.copy(
+                                    currentPath = intent.path,
+                                    currentStorageType = intent.storageType,
+                                    currentServerId = intent.serverId,
+                                    files = newFiles,
+                                    selectedFiles = emptySet(),
+                                ),
                             )
                         }
 
                         FileManagerIntent.NavigateUp -> {
-                            val parentPath = state.currentPath.substringBeforeLast('/', "")
-                            state = state.copy(
-                                currentPath = parentPath.ifEmpty { "/" },
-                                selectedFiles = emptySet(),
+                            val parentPath = currentState.currentPath.substringBeforeLast('/', "")
+                            val newPath = parentPath.ifEmpty { "/" }
+                            val newFiles = if (newPath == "/storage/emulated/0") {
+                                PreviewMockData.sampleFiles
+                            } else {
+                                emptyList()
+                            }
+                            updateState(
+                                currentState.copy(
+                                    currentPath = newPath,
+                                    files = newFiles,
+                                    selectedFiles = emptySet(),
+                                ),
                             )
                         }
 
                         is FileManagerIntent.OpenFile -> {
                             if (intent.fileItem.isDirectory) {
-                                state = state.copy(
-                                    currentPath = intent.fileItem.path,
-                                    selectedFiles = emptySet(),
+                                val newFiles = if (intent.fileItem.path == "/storage/emulated/0") {
+                                    PreviewMockData.sampleFiles
+                                } else {
+                                    emptyList()
+                                }
+                                updateState(
+                                    currentState.copy(
+                                        currentPath = intent.fileItem.path,
+                                        files = newFiles,
+                                        selectedFiles = emptySet(),
+                                    ),
                                 )
                             }
                         }
 
                         is FileManagerIntent.DeleteFiles -> {
-                            val updatedFiles = state.files.filterNot { intent.paths.contains(it.path) }
-                            state = state.copy(
-                                files = updatedFiles,
-                                selectedFiles = emptySet(),
+                            val updatedFiles = currentState.files.filterNot { intent.paths.contains(it.path) }
+                            updateState(
+                                currentState.copy(
+                                    files = updatedFiles,
+                                    selectedFiles = emptySet(),
+                                ),
                             )
                         }
 
                         is FileManagerIntent.RenameFile -> {
-                            val updatedFiles = state.files.map { item ->
+                            val updatedFiles = currentState.files.map { item ->
                                 if (item.path == intent.path) {
                                     val newPath = item.path.substringBeforeLast('/') + "/" + intent.newName
                                     item.copy(name = intent.newName, path = newPath)
@@ -121,16 +160,16 @@ fun FileManagerPreviewWrapper(
                                     item
                                 }
                             }
-                            state = state.copy(files = updatedFiles, selectedFiles = emptySet())
+                            updateState(currentState.copy(files = updatedFiles, selectedFiles = emptySet()))
                         }
 
                         is FileManagerIntent.CreateFolder -> {
                             val newFolder = FileItem(
-                                path = "${state.currentPath}/${intent.name}",
+                                path = "${currentState.currentPath}/${intent.name}",
                                 name = intent.name,
                                 isDirectory = true,
                             )
-                            state = state.copy(files = state.files + newFolder)
+                            updateState(currentState.copy(files = currentState.files + newFolder))
                         }
 
                         FileManagerIntent.NavigateToAddStorage -> {
@@ -142,8 +181,8 @@ fun FileManagerPreviewWrapper(
                         }
 
                         is FileManagerIntent.DeleteRemoteServer -> {
-                            val updatedSidebar = state.sidebarItems.filterNot { it.serverId == intent.serverId }
-                            state = state.copy(sidebarItems = updatedSidebar)
+                            val updatedSidebar = currentState.sidebarItems.filterNot { it.serverId == intent.serverId }
+                            updateState(currentState.copy(sidebarItems = updatedSidebar))
                         }
 
                         FileManagerIntent.Refresh -> {
@@ -152,8 +191,8 @@ fun FileManagerPreviewWrapper(
                     }
                 },
                 onDeleteServer = { serverId ->
-                    val updatedSidebar = state.sidebarItems.filterNot { it.serverId == serverId }
-                    state = state.copy(sidebarItems = updatedSidebar)
+                    val updatedSidebar = currentState.sidebarItems.filterNot { it.serverId == serverId }
+                    updateState(currentState.copy(sidebarItems = updatedSidebar))
                 },
             )
         }
@@ -165,28 +204,41 @@ fun FileManagerPreviewWrapper(
  * to support Android Studio Interactive Preview Mode.
  */
 @Composable
-fun SettingsPreviewWrapper(initialState: SettingsState = SettingsPreviewParameterProvider().values.first(), onBack: () -> Unit = {}) {
-    var state by remember { mutableStateOf(initialState) }
+fun SettingsPreviewWrapper(
+    initialState: SettingsState = SettingsPreviewParameterProvider().values.first(),
+    onBack: () -> Unit = {},
+    state: SettingsState? = null,
+    onStateChange: ((SettingsState) -> Unit)? = null,
+) {
+    var localState by remember { mutableStateOf(initialState) }
+    val currentState = state ?: localState
+    val updateState: (SettingsState) -> Unit = { newState ->
+        if ((state != null) && (onStateChange != null)) {
+            onStateChange(newState)
+        } else {
+            localState = newState
+        }
+    }
 
     MeldDriveTheme {
         SettingsContent(
-            state = state,
+            state = currentState,
             onIntent = { intent ->
                 when (intent) {
                     is SettingsIntent.SetBufferingEnabled -> {
-                        state = state.copy(bufferingEnabled = intent.enabled)
+                        updateState(currentState.copy(bufferingEnabled = intent.enabled))
                     }
 
                     is SettingsIntent.SetBufferSizeMb -> {
-                        state = state.copy(bufferSizeMb = intent.sizeMb)
+                        updateState(currentState.copy(bufferSizeMb = intent.sizeMb))
                     }
 
                     is SettingsIntent.SetShowHiddenFiles -> {
-                        state = state.copy(showHiddenFiles = intent.show)
+                        updateState(currentState.copy(showHiddenFiles = intent.show))
                     }
 
                     is SettingsIntent.SetLanguage -> {
-                        state = state.copy(currentLanguageCode = intent.languageCode)
+                        updateState(currentState.copy(currentLanguageCode = intent.languageCode))
                     }
                 }
             },
@@ -204,45 +256,55 @@ fun AddStoragePreviewWrapper(
     initialState: AddStorageState = AddStoragePreviewParameterProvider().values.first(),
     onBack: () -> Unit = {},
     onSuccess: () -> Unit = {},
+    state: AddStorageState? = null,
+    onStateChange: ((AddStorageState) -> Unit)? = null,
 ) {
-    var state by remember { mutableStateOf(initialState) }
+    var localState by remember { mutableStateOf(initialState) }
+    val currentState = state ?: localState
+    val updateState: (AddStorageState) -> Unit = { newState ->
+        if ((state != null) && (onStateChange != null)) {
+            onStateChange(newState)
+        } else {
+            localState = newState
+        }
+    }
 
     MeldDriveTheme {
         AddStorageContent(
-            state = state,
+            state = currentState,
             onIntent = { intent ->
                 when (intent) {
                     is AddStorageIntent.ServerTypeChange -> {
                         val defaultPort = if (intent.value == ServerType.SMB) "445" else "443"
-                        state = state.copy(serverType = intent.value, port = defaultPort)
+                        updateState(currentState.copy(serverType = intent.value, port = defaultPort))
                     }
 
                     is AddStorageIntent.DisplayNameChange -> {
-                        state = state.copy(displayName = intent.value)
+                        updateState(currentState.copy(displayName = intent.value))
                     }
 
                     is AddStorageIntent.HostChange -> {
-                        state = state.copy(host = intent.value)
+                        updateState(currentState.copy(host = intent.value))
                     }
 
                     is AddStorageIntent.PortChange -> {
-                        state = state.copy(port = intent.value)
+                        updateState(currentState.copy(port = intent.value))
                     }
 
                     is AddStorageIntent.UsernameChange -> {
-                        state = state.copy(username = intent.value)
+                        updateState(currentState.copy(username = intent.value))
                     }
 
                     is AddStorageIntent.PasswordChange -> {
-                        state = state.copy(password = intent.value)
+                        updateState(currentState.copy(password = intent.value))
                     }
 
                     is AddStorageIntent.AnonymousChange -> {
-                        state = state.copy(isAnonymous = intent.value)
+                        updateState(currentState.copy(isAnonymous = intent.value))
                     }
 
                     is AddStorageIntent.TrustSelfSignedChange -> {
-                        state = state.copy(trustSelfSigned = intent.value)
+                        updateState(currentState.copy(trustSelfSigned = intent.value))
                     }
 
                     is AddStorageIntent.SelectDiscoveredServer -> {
@@ -251,22 +313,24 @@ fun AddStoragePreviewWrapper(
                             StorageType.WEBDAV -> ServerType.WEBDAV
                             else -> ServerType.SMB
                         }
-                        state = state.copy(
-                            host = intent.server.host,
-                            port = intent.server.port.toString(),
-                            serverType = type,
-                            displayName = intent.server.name,
+                        updateState(
+                            currentState.copy(
+                                host = intent.server.host,
+                                port = intent.server.port.toString(),
+                                serverType = type,
+                                displayName = intent.server.name,
+                            ),
                         )
                     }
 
                     AddStorageIntent.StartDiscovery -> {
-                        state = state.copy(
-                            isDiscovering = !state.isDiscovering,
-                            discoveredServers = if (state.discoveredServers.isEmpty()) {
-                                PreviewMockData.sampleDiscoveredServers
-                            } else {
-                                state.discoveredServers
-                            },
+                        updateState(
+                            currentState.copy(
+                                isDiscovering = !currentState.isDiscovering,
+                                discoveredServers = currentState.discoveredServers.ifEmpty {
+                                    PreviewMockData.sampleDiscoveredServers
+                                },
+                            ),
                         )
                     }
 
