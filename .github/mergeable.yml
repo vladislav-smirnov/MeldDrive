@@ -1,0 +1,33 @@
+version: 2
+mergeable:
+  - when: pull_request.opened, pull_request.edited, pull_request.synchronize, pull_request.reopened
+    name: 'PR Title and Description Validation'
+    validate:
+      - do: title
+        must_include:
+          regex: '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([\w\-\.]+\))?: .+'
+          message: 'PR title must follow Conventional Commits format, e.g. "feat(ui): add file sorting".'
+      - do: description
+        must_include:
+          regex: '## Summary'
+          message: 'PR description must include the "## Summary" section from the PR template.'
+      - do: description
+        must_include:
+          regex: '## Type of Change'
+          message: 'PR description must include the "## Type of Change" section from the PR template.'
+      - do: description
+        must_include:
+          regex: '## Manual Testing & Verification'
+          message: 'PR description must include the "## Manual Testing & Verification" section from the PR template.'
+      - do: description
+        must_include:
+          regex: '## Author Checklist'
+          message: 'PR description must include the "## Author Checklist" section from the PR template.'
+
+  - when: pull_request.opened, pull_request.edited, pull_request.synchronize, pull_request.reopened
+    name: 'Commit guidelines check'
+    validate:
+      - do: commit
+        message:
+          regex: '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([\w\-\.]+\))?: .+'
+          message: 'Commit messages must follow Conventional Commits format, e.g. "feat(ui): add file sorting".'

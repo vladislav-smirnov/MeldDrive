@@ -64,6 +64,10 @@ allprojects {
                 targetExclude("**/build/**/*.gradle.kts")
                 ktlint("1.8.0")
             }
+            flexmark {
+                target("**/*.md")
+                targetExclude("**/build/**/*.md")
+            }
         }
     }
 }

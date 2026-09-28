@@ -1,0 +1,41 @@
+<type>(<scope>): <short summary in present tense>
+
+<body>
+
+# --- COMMIT MESSAGE FORMAT ---
+# <type>(<scope>): <short summary in present tense>
+#
+# Allowed Types:
+#   feat     - A new feature or user-visible enhancement
+#   fix      - A bug fix
+#   docs     - Documentation changes only
+#   style    - Code style changes (formatting, missing semi-colons, whitespace, etc.)
+#   refactor - Code changes that neither fix a bug nor add a feature
+#   perf     - Code changes that improve performance
+#   test     - Adding missing tests or correcting existing tests
+#   build    - Changes affecting build system, Gradle, dependencies, compile settings
+#   ci       - Changes to CI/CD workflows, Mergeable rules, GitHub Actions
+#   chore    - Maintenance tasks, repository housekeeping, minor updates
+#   revert   - Reverts a previous commit
+#
+# Scopes (optional, but recommended):
+#   ui         - Compose views, screens, preview wrappers, theme, components
+#   data       - Repositories, database (Room), DataStore, file handlers
+#   storage    - Local, SMB, or WebDAV file system handlers, FileStreamProvider
+#   navigation - Navigation routes, backstack management, drawer/rail
+#   security   - Tink encryption, KeyStore, credentials
+#   discovery  - Network server discovery (NSD, NetBIOS)
+#   deps       - Dependency updates or configuration
+#   ci         - Workflows, Mergeable, build configuration
+#
+# Guidelines for Summary:
+#   - Capitalize the first letter or keep lowercase consistently
+#   - Use imperative, present tense ("add" not "added", "change" not "changed")
+#   - Do NOT end summary with a period
+#   - Keep total length under 72 characters
+#
+# Body (Required):
+#   Explain the motivation, context, and what was changed.
+#   Use one or more non-comment lines below the subject.
+#
+# Closes: #<issue number>
