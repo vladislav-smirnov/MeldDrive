@@ -3,5 +3,12 @@
     "schedule": ["every weekend"],
     "extends": [
         "config:recommended"
-    ]
+    ],
+    "labels": ["renovate", "bot", "dependencies"],
+
+    "semanticCommits": "enabled",
+    "semanticCommitType": "chore",
+    "semanticCommitScope": "deps",
+
+    "prBodyTemplate": "## Summary\n<!-- Provide a clear, concise summary of the changes introduced by this pull request. -->\n<!-- Explain the motivation and context behind these changes. -->\nAutomated dependency update for `{{{depName}}}` to version `{{{newVersion}}}`.\n\n## Type of Change\n<!-- Select the type of change that best describes this PR: -->\n- [ ] 🚀 **feat**: A new feature or enhancement\n- [ ] 🐛 **fix**: A bug fix\n- [ ] 🛠️ **refactor**: Code change that neither fixes a bug nor adds a feature\n- [ ] ⚡ **perf**: Performance improvement\n- [ ] 🧪 **test**: Adding or updating tests\n- [ ] 📚 **docs**: Documentation update\n- [x] 🔧 **chore**: Build, dependencies, CI, or tool configuration changes\n\n## Related Issues\n<!-- Link related issues or PRs here using standard keywords (e.g., Closes #123, Fixes #456) -->\nCloses #\n\n## Changes Made\n<!-- List key technical changes, architectural adjustments, or new components added -->\n- Updated package `{{{depName}}}` (from `{{{currentVersion}}}` to `{{{newVersion}}}`)\n\n## Manual Testing & Verification\n<!-- Describe the manual testing performed to verify your changes. -->\n- [ ] Tested on Android Emulator / Physical Device\n- [ ] Verified UI responsiveness and theme (Light/Dark mode)\n- [ ] Verified localization / string resources if applicable\n\n<details>\n<summary>Visual Evidence (Screenshots / Screen Recordings)</summary>\n\n<!-- Drag and drop or insert images/videos here -->\n\n</details>\n\n## Author Checklist\n- [x] My PR title follows the Conventional Commits specification (e.g., `feat(ui): add new file sorting menu`).\n- [x] I have provided a detailed summary and context for this change.\n- [ ] I have verified that all relevant use cases and edge cases behave as expected.\n- [ ] I have added/updated relevant unit or instrumented tests where applicable.\n- [ ] I have updated documentation or `AGENTS.md` if high-level architecture or workflows were modified.\n\n---\n### 🤖 Renovate Update Details\n{{{header}}}\n\n{{{table}}}\n\n{{{warnings}}}\n\n{{{notes}}}\n\n{{{changelogs}}}\n\n{{{configDescription}}}\n\n{{{controls}}}\n\n{{{footer}}}"
 }
