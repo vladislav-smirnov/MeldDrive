@@ -108,7 +108,7 @@ jobs:
               java-version: '17' # Update this to match your project's Java version
 
         - name: Setup Gradle
-          uses: gradle/actions/setup-gradle@v3
+          uses: gradle/actions/setup-gradle@v6
 
         - name: Run Instrumented Tests
           uses: reactivecircus/android-emulator-runner@v2
